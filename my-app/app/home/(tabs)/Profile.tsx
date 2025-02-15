@@ -1,6 +1,4 @@
-// import { Settings } from "lucide-react-native";
-
-import { View, Text } from "lucide-react-native"
+import { View, Text } from "react-native"
 
 
 
@@ -8,8 +6,8 @@ import { View, Text } from "lucide-react-native"
 export default function Profile() {
     return(
 
-        <View>
-        <Text>Profile</Text>
+        <View className="flex-1 bg-black border-2">
+        <Text>Profilesss</Text>
         </View>
 
     )
