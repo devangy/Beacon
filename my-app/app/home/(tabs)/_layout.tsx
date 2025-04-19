@@ -2,7 +2,7 @@
 import { Tabs } from "expo-router";
 import { MessageCircleDashed, View } from "lucide-react-native";
 import { Settings, UsersRound } from "lucide-react-native";
-
+import ChatScreen from "../ChatScreen";
 
 
 
@@ -42,7 +42,7 @@ export default function TabLayout() {
         name="Friends"
         options={{
           title: 'Contacts',
-          headerShown: false, // Disable header for this screen
+          headerShown: true, // Disable header for this screen
           tabBarIcon: ({ color, size, focused }) => <UsersRound size={30} color="#93FC00" />
         }}
       />
@@ -60,7 +60,6 @@ export default function TabLayout() {
           title: 'Settings',
           headerShown: false, // Disable header for this screen
           tabBarIcon: ({ color, size, focused }) => <Settings size={30} color="#93FC00" />
-          
         }}
       />
     </Tabs>
