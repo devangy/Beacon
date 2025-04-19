@@ -35,6 +35,7 @@ interface Friend {
 export default function Friends() {
   const router = useRouter();
 
+<<<<<<< HEAD
   const navigateToChat = (friend: Friend) => {
     router.push({
       pathname: '/home/ChatScreen',
@@ -77,3 +78,11 @@ export default function Friends() {
     </View>
   );
 }
+=======
+    return(
+        <View className="flex-1 border-2 bg-black">
+            <Text>Friends tab</Text>
+        </View>
+    )
+}
+>>>>>>> 6f111018ffe03cc769d793ded53370e3691b6608

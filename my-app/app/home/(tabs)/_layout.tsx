@@ -4,8 +4,6 @@ import { MessageCircleDashed, View } from "lucide-react-native";
 import { Settings, UsersRound } from "lucide-react-native";
 import ChatScreen from "../ChatScreen";
 
-
-
 export default function TabLayout() {
 
   return (
@@ -42,6 +40,13 @@ export default function TabLayout() {
         name="Friends"
         options={{
           title: 'Contacts',
+<<<<<<< HEAD
+=======
+          headerStyle: {
+            backgroundColor: 'black', // Sets the background color of the header
+          },
+          headerTintColor: 'white',
+>>>>>>> 6f111018ffe03cc769d793ded53370e3691b6608
           headerShown: true, // Disable header for this screen
           tabBarIcon: ({ color, size, focused }) => <UsersRound size={30} color="#93FC00" />
         }}
@@ -50,6 +55,10 @@ export default function TabLayout() {
         name="Chats"
         options={{
           title: 'Chats',
+          headerStyle: {
+            backgroundColor: 'black',
+          },
+          headerTintColor: 'white',
           headerShown: true, // Disable header for this screen
           tabBarIcon: ({ color, size, focused }) => <MessageCircleDashed size={30} color="#93FC00" />,
         }}
@@ -57,8 +66,12 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Profile"
         options={{
-          title: 'Settings',
-          headerShown: false, // Disable header for this screen
+          title: 'Profile',
+          headerStyle: {
+            backgroundColor: 'black',
+          },
+          headerTintColor: 'white',
+          headerShown: true, // Disable header for this screen
           tabBarIcon: ({ color, size, focused }) => <Settings size={30} color="#93FC00" />
         }}
       />
