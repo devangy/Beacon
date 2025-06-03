@@ -1,6 +1,11 @@
 import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 
+WebBrowser.maybeCompleteAuthSession();
+import * as WebBrowser from 'expo-web-browser';
+
+
+
 // Mock friends data
 const mockFriends: Friend[] = [
   { id: '1', name: 'Aarav Mehta', status: 'Online' },
@@ -76,10 +81,4 @@ export default function Friends() {
       />
     </View>
   );
-}
-    return(
-        <View className="flex-1 border-2 bg-black">
-            <Text>Friends tab</Text>
-        </View>
-    )
 }

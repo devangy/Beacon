@@ -26,7 +26,6 @@ const getStatusColor = (status : string) => {
   }
 };
 
-<<<<<<< HEAD
 export default function Friends() {
   return (
     <View className="flex-1 bg-black p-4">
@@ -56,14 +55,4 @@ export default function Friends() {
       />
     </View>
   );
-=======
-export default function Chats() {
-    
-
-    return(
-        <View className="flex-1 flex` border-2 bg-black">
-            <Text>Profile Tab</Text>
-        </View>
-    )
->>>>>>> 6f111018ffe03cc769d793ded53370e3691b6608
 }

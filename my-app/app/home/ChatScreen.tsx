@@ -11,8 +11,12 @@ import {
   ListRenderItemInfo
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowRight } from 'lucide-react-native';
 
-// Define types for chat messages
+import {socket} from '../../socket'
+
+
+
 interface ChatMessage {
   id: string;
   sender: 'user' | 'friend';
@@ -55,6 +59,7 @@ const ChatScreen: React.FC = () => {
 
   const sendMessage = (): void => {
     if (message.trim() === '') return;
+    // socket.emit('message', 'gaynigger');
     
     // Add user message to chat
     const newMessage: ChatMessage = {
@@ -64,6 +69,7 @@ const ChatScreen: React.FC = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     
+    socket.emit('message', newMessage);
     setChatHistory(prevChat => [...prevChat, newMessage]);
     setMessage('');
     
@@ -108,7 +114,6 @@ const ChatScreen: React.FC = () => {
         }} 
       />
       
-      {/* Friend info banner (optional) */}
       <View className="flex-row items-center p-2 bg-gray-900">
         <Image
           source={{ uri: getAvatarUrl(friendName) }}
@@ -119,7 +124,6 @@ const ChatScreen: React.FC = () => {
         </Text>
       </View>
       
-      {/* Chat Messages */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -144,11 +148,11 @@ const ChatScreen: React.FC = () => {
             onSubmitEditing={sendMessage}
           />
           <TouchableOpacity 
-            className="bg-blue-500 w-10 h-10 rounded-full items-center justify-center"
+            className="bg-blue-500 w-10 h-10 rounded-full items-center  justify-center"
             onPress={sendMessage}
             disabled={message.trim() === ''}
           >
-            <Text className="text-white font-bold">→</Text>
+            <ArrowRight color="white" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
