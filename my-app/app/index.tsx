@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { View, Text, TouchableOpacity, Image , Animated} from "react-native";
+=======
+import { View, Text, TouchableOpacity, Image, Animated, Platform } from "react-native";
+>>>>>>> b0afe25368df44e13bae6299c703d615bf03bf7b
 import Svg from '../components/SvgComponent';
 import { useNavigation } from "expo-router";
 import { socket } from '../socket'
@@ -10,8 +14,11 @@ import { useRef } from 'react';
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> b0afe25368df44e13bae6299c703d615bf03bf7b
 WebBrowser.maybeCompleteAuthSession();
 
 // Endpoint for github oauth 
@@ -79,10 +86,15 @@ export default function Index() {
     }).start();
   };
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> b0afe25368df44e13bae6299c703d615bf03bf7b
   const [request, response, promptAsync] = useAuthRequest(
     {
       clientId: process.env.EXPO_PUBLIC_GHUB_CID || 'add',
       scopes: ['read:user', 'user:email'],
+<<<<<<< HEAD
       redirectUri: makeRedirectUri({
         scheme: 'myapp'
       }),
@@ -91,14 +103,35 @@ export default function Index() {
   );
 
 
+=======
+      redirectUri: Platform.select({
+        web: 'http://localhost:8081', // For web browser
+        default: makeRedirectUri({     // For mobile
+          scheme: 'myapp',
+          path: 'oauth'
+        })
+      })
+    },
+    discovery
+  );
+  
+>>>>>>> b0afe25368df44e13bae6299c703d615bf03bf7b
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { code } = response.params;
+<<<<<<< HEAD
       console.log('Response Code:', code)
     }
   }, [response]);
 
+=======
+      console.log('Auth code:', code);
+      
+      // router.push('/home/Friends');
+    }
+  }, [response]);
+>>>>>>> b0afe25368df44e13bae6299c703d615bf03bf7b
 
   return (
     <View
