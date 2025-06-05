@@ -77,9 +77,11 @@ export default function Friends() {
     </View>
   );
 }
-    return(
-        <View className="flex-1 border-2 bg-black">
-            <Text>Friends tab</Text>
-        </View>
-    )
+
+export function Chats() {
+  return (
+    <View className="flex-1 flex border-2 bg-black">
+      <Text>Profile Tab</Text>
+    </View>
+  );
 }
