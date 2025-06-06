@@ -7,6 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 // import { Animated } from 'react-native';
 import { useRef } from 'react';
+import axios from 'axios'
 
 
 
@@ -93,13 +94,29 @@ export default function Index() {
   );
   
 
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { code } = response.params;
-      console.log('Auth code:', code);
-      
-      // router.push('/home/Friends');
-    }
+   useEffect(() => {
+    const handleOAuth = async () => {
+      if (response?.type === 'success') {
+        const { code } = response.params;
+        console.log('Auth code:', code);
+  
+        try {
+          const res = await axios({
+            method: 'post',
+            url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
+            data: { code },
+          });
+  
+          console.log('Login successful:', res.data);
+          
+          // router.push('/home/Friends');
+        } catch (error: any) {
+          console.error('Error logging in:', error);
+        }
+      }
+    };
+  
+    handleOAuth();
   }, [response]);
 
   return (
