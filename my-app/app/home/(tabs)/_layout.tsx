@@ -40,13 +40,6 @@ export default function TabLayout() {
         name="Friends"
         options={{
           title: 'Contacts',
-<<<<<<< HEAD
-          headerStyle: {
-            backgroundColor: 'black', // Sets the background color of the header
-          },
-          headerTintColor: 'white',
-=======
->>>>>>> b0afe25368df44e13bae6299c703d615bf03bf7b
           headerShown: true, // Disable header for this screen
           tabBarIcon: ({ color, size, focused }) => <UsersRound size={30} color="#93FC00" />
         }}
