@@ -46,11 +46,10 @@ model Message {
 model ChatParticipant {
   id        String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id])
-  messages   Message[]
+  messages  Message[]
   userId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
   chatId    String
-  // joinedAt  DateTime @default(now())
-
+  joinedAt  DateTime @default(now())
   @@unique([userId, chatId]) // Prevent duplicate entries
 }
