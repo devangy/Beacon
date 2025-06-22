@@ -20,7 +20,7 @@ model User {
   avatarUrl String
   chats     ChatParticipant[]
   createdAt DateTime          @default(now())
-  friends   UserFriend[]     @relation("UserFriends") 
+  friends   UserFriend[]     @relation("UserFriends")
   addedBy   UserFriend[]     @relation("FriendsUsers")
 }
 
