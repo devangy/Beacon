@@ -2,25 +2,28 @@ import * as SecureStore from 'expo-secure-store';
 
 
 
-export async function setToken(jwtToken: string) {
+export async function setToken(refreshToken: string) : Promise<boolean> {
     try {
-        await SecureStore.setItemAsync('jwtToken', jwtToken)
+        await SecureStore.setItemAsync('refreshToken', refreshToken)
+        return true
         
     } catch (error) {
         console.error('error setting token', error);
+        throw new Error('Failed to store token');
     }
 }
 
 
-export async function getToken() { 
+export async function getToken() : Promise<string | null> { 
     try {
-        const token = await SecureStore.getItemAsync('jwtToken');
-        if (token) {
-            return token;
+        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        if (refreshToken) {
+            return refreshToken;
         } else {
             return null;
         }
     } catch (error) {
         console.error('error getting token', error)
+        throw new Error('Failed to retrieve token');
     }
 }

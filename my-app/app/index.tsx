@@ -5,9 +5,14 @@ import { socket } from '../socket'
 import { useEffect, useState } from "react";
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
-// import { Animated } from 'react-native';
 import { useRef } from 'react';
 import axios from 'axios'
+import { useRouter } from "expo-router";
+import { ApiResponse } from "@/types/api.response";
+import { useAppDispatch } from "../hooks/hooks";
+import { authUser } from "@/types/authUser";
+import { setAuthUser } from "@/slices/authSlice";
+import { setToken, getToken } from "@/hooks/authToken";
 
 
 
@@ -19,9 +24,13 @@ const discovery = {
   tokenEndpoint: 'https://github.com/login/oauth/access_token',
 };
 
-export default function Index() {
-  const [setIsConnected] = useState(false);
-  const [setTransport] = useState('N/A');
+export default function Index () {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+
+
+  const [isConnected, setIsConnected] = useState(false);
+  const [transport, setTransport] = useState('N/A');
 
 
   // useEffect(() => {
@@ -79,6 +88,7 @@ export default function Index() {
   };
 
   const [request, response, promptAsync] = useAuthRequest(
+    
     {
       clientId: process.env.EXPO_PUBLIC_GHUB_CID || 'add',
       scopes: ['read:user', 'user:email'],
@@ -92,30 +102,60 @@ export default function Index() {
     },
     discovery
   );
-  
 
-   useEffect(() => {
+
+
+
+  useEffect(() => {
     const handleOAuth = async () => {
       if (response?.type === 'success') {
         const { code } = response.params;
         console.log('Auth code:', code);
-  
+
         try {
-          const res = await axios({
+          const res = await axios<ApiResponse<authUser>>({
             method: 'post',
             url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
             data: { code },
           });
-  
+
           console.log('Login successful:', res.data);
+
+          const accessToken = res.data.data.accessToken;
+          const refreshToken = res.data.data.refreshToken;
+          const userId = res.data.data.userId; 
+
+
+          console.log('Token received:', accessToken);
+          console.log('Refresh Token:', refreshToken);
+          console.log('User ID:', userId);
+
+  
+
+        //   if (refreshToken) {
+        //     setToken(refreshToken);
+        //   } else {
+        //     console.error('No refresh token received');
+        //     throw new Error('No refresh token received');
+        //   }
+
+        //   const refreshTokenExpoStore = await getToken()
+
+        //  console.log('Refresh Token from Expo Secure Store:', refreshTokenExpoStore);
+
           
-          // router.push('/home/Friends');
+
+          // Dispatch using the accessToken and decoded userId
+          dispatch(setAuthUser({ accessToken: accessToken, userId: userId }));
+
+          router.push('/home/Friends');
         } catch (error: any) {
           console.error('Error logging in:', error);
+          response.error = error.message || 'An error occurred during login';
         }
       }
     };
-  
+
     handleOAuth();
   }, [response]);
 
@@ -135,44 +175,44 @@ export default function Index() {
 
       <View className="flex border-2 border-red-500 h-20 w-full justify-center items-center mt-80">
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        onPress={() => promptAsync()}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={0.8}
-        style={{
-          backgroundColor: '#24292e',
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-          borderRadius: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.2,
-          shadowRadius: 5,
-          elevation: 5,
-        }}
-      >
-        <Image
-          source={{
-            uri: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
-          }}
-          style={{ width: 28, height: 28, marginRight: 12  , borderRadius: 10, }}
-        />
-        <Text
-          style={{
-            color: '#ffffff',
-            fontSize: 18,
-            fontWeight: '600',
-            fontFamily: 'GeistMono',
-          }}
-        >
-          Sign in with GitHub
-        </Text>
-      </TouchableOpacity>
-    </Animated.View>
+          <TouchableOpacity
+            onPress={() => promptAsync()}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            activeOpacity={0.8}
+            style={{
+              backgroundColor: '#24292e',
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              borderRadius: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.2,
+              shadowRadius: 5,
+              elevation: 5,
+            }}
+          >
+            <Image
+              source={{
+                uri: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+              }}
+              style={{ width: 28, height: 28, marginRight: 12, borderRadius: 10, }}
+            />
+            <Text
+              style={{
+                color: '#ffffff',
+                fontSize: 18,
+                fontWeight: '600',
+                fontFamily: 'GeistMono',
+              }}
+            >
+              Sign in with GitHub
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </View >
   );

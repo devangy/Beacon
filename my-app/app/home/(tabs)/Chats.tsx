@@ -1,6 +1,9 @@
 import { View, Text, FlatList, Image } from "react-native";
 import ChatScreen  from "../ChatScreen";
 
+
+import {get}
+
 // Mock friends data without hardcoded avatar URLs
 const mockFriends = [
   { id: '1', name: 'Aarav Mehta', status: 'Online' },

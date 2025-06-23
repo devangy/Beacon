@@ -1,10 +1,32 @@
-// import { HapticTab } from "@/app-example/components/HapticTab";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { MessageCircleDashed, View } from "lucide-react-native";
 import { Settings, UsersRound } from "lucide-react-native";
-import ChatScreen from "../ChatScreen";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
+import { ActivityIndicator, View as RNView } from "react-native";
 
 export default function TabLayout() {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // Redirecting to my index page that is login page if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Slight delay to ensure layout is mounted
+      setTimeout(() => {
+        router.replace("/");
+      }, 0);
+    }
+  }, [isAuthenticated]);
+
+  // Preventing premature renderng here
+  if (!isAuthenticated) {
+    return (
+      <RNView style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: '#101820',}}>
+        <ActivityIndicator size="large" color='#7CFC00'/>
+      </RNView>
+    );
+  }
 
   return (
     <Tabs
@@ -12,16 +34,13 @@ export default function TabLayout() {
         tabBarActiveTintColor: "black",
         tabBarActiveBackgroundColor: "white",
         headerShown: true,
-
-        // tabBarButton: HapticTab,
         tabBarStyle: {
           height: 70,
           borderColor: "white",
           backgroundColor: "black",
-          
         },
         tabBarLabelStyle: {
-          fontSize: 16, // Adjust font size here for labels
+          fontSize: 16,
           padding: 1,
           fontFamily: "GeistMono",
         },
@@ -40,32 +59,27 @@ export default function TabLayout() {
         name="Friends"
         options={{
           title: 'Contacts',
-          headerShown: true, // Disable header for this screen
-          tabBarIcon: ({ color, size, focused }) => <UsersRound size={30} color="#93FC00" />
+          headerStyle: { backgroundColor: 'black' },
+          headerTintColor: 'white',
+          tabBarIcon: () => <UsersRound size={30} color="#93FC00" />
         }}
       />
       <Tabs.Screen
         name="Chats"
         options={{
           title: 'Chats',
-          headerStyle: {
-            backgroundColor: 'black',
-          },
+          headerStyle: { backgroundColor: 'black' },
           headerTintColor: 'white',
-          headerShown: true, // Disable header for this screen
-          tabBarIcon: ({ color, size, focused }) => <MessageCircleDashed size={30} color="#93FC00" />,
+          tabBarIcon: () => <MessageCircleDashed size={30} color="#93FC00" />
         }}
       />
       <Tabs.Screen
         name="Profile"
         options={{
           title: 'Profile',
-          headerStyle: {
-            backgroundColor: 'black',
-          },
+          headerStyle: { backgroundColor: 'black' },
           headerTintColor: 'white',
-          headerShown: true, // Disable header for this screen
-          tabBarIcon: ({ color, size, focused }) => <Settings size={30} color="#93FC00" />
+          tabBarIcon: () => <Settings size={30} color="#93FC00" />
         }}
       />
     </Tabs>
