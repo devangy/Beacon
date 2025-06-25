@@ -3,10 +3,8 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io'
 import cors from 'cors';
 
-
-
 import authRouter from './routes/auth.route.js'
-
+import chatRouter from './routes/chat.route.js'
 
 const app = express();
 const server = createServer(app);
@@ -35,6 +33,7 @@ app.use('/test', (req, res) => {
 
 
 app.use("/api/auth", authRouter);
+app.use("/api/chats", chatRouter)
 
   
 
@@ -47,7 +46,6 @@ io.on('connection', (socket) => {
 });
 
 
-app.use("/auth", authRouter);
 
 
 //error handling middleware

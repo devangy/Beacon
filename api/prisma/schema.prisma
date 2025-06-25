@@ -14,56 +14,56 @@ datasource db {
 }
 
 model User {
-  id        String            @id @default(uuid())
-  githubId  Int               @unique
+  id        String        @id @default(uuid())
+  githubId  Int           @unique
   username  String
   avatarUrl String
-  chats     ChatParticipant[]
-  createdAt DateTime          @default(now())
-  friends   UserFriend[]     @relation("UserFriends")
-  addedBy   UserFriend[]     @relation("FriendsUsers")
+  chats     ChatMember[]  // Through join table
+  createdAt DateTime      @default(now())
+  friends   UserFriend[]  @relation("UserFriends")
+  addedBy   UserFriend[]  @relation("FriendsUsers")
 }
 
 model UserFriend {
-  id        String          @id @default(uuid())
-  user      User            @relation("UserFriends", fields: [userId], references: [id])
-  friend    User            @relation("FriendsUsers", fields: [friendId], references: [id])
+  id        String   @id @default(uuid())
+  user      User     @relation("UserFriends", fields: [userId], references: [id])
+  friend    User     @relation("FriendsUsers", fields: [friendId], references: [id])
   friendId  String
   userId    String
   status    String   // pending, accepted, blocked
-  createdAt DateTime         @default(now())
+  createdAt DateTime @default(now())
 
-  @@unique([userId, friendId]) // Prevent duplicates
+  @@unique([userId, friendId])
 }
 
 model Chat {
-  id           String            @id @default(uuid())
-  isGroup      Boolean           @default(false)
-  name         String? // for group chats
+  id           String        @id @default(uuid())
+  name         String?       // group name
+  isGroup      Boolean       @default(false)
   messages     Message[]
-  participants ChatParticipant[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  members      ChatMember[]  // many-to-many via ChatMember
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Message {
-  id        String          @id @default(uuid())
+  id        String      @id @default(uuid())
   content   String
-  sender    ChatParticipant @relation(fields: [senderId], references: [id])
+  sender    ChatMember  @relation(fields: [senderId], references: [id])
   senderId  String
-  chat      Chat            @relation(fields: [chatId], references: [id])
+  chat      Chat        @relation(fields: [chatId], references: [id])
   chatId    String
-  createdAt DateTime        @default(now())
+  createdAt DateTime    @default(now())
 }
 
-model ChatParticipant {
-  id       String    @id @default(uuid())
-  user     User      @relation(fields: [userId], references: [id])
-  messages Message[]
-  userId   String
-  chat     Chat      @relation(fields: [chatId], references: [id])
-  chatId   String
-  joinedAt DateTime  @default(now())
+model ChatMember {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  chat      Chat       @relation(fields: [chatId], references: [id])
+  chatId    String
+  messages  Message[]
+  joinedAt  DateTime   @default(now())
 
-  @@unique([userId, chatId]) // Prevent duplicate entries
+  @@unique([userId, chatId]) // Prevent duplicate membership
 }

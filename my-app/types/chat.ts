@@ -1,4 +1,7 @@
 export interface Chat {
-    chatParticipants: string
-    chatId : string
+    id: string
+    name? :string
+    isGroup: boolean
+    chatMembers: string[]
+    imageUrl? : string
 }
