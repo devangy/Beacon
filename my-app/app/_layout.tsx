@@ -21,9 +21,22 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <Stack>
-        <Text className="font-SpaceMono text-xl">Custom Font Loaded</Text>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="home/(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="NewChat"
+          options={{
+            headerShown: true,
+            title: "Select Contact",
+            headerStyle: {
+              backgroundColor: "black",
+            },
+            headerTintColor: "white",
+            headerTitleStyle: {
+              fontWeight: "light",
+            },
+          }}
+        />
       </Stack>
     </Provider>
   );

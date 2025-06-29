@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
+import { Chat } from "@/types/chat";
+
 type GetUserChatsArgs = {
   userId: string;
   token: string;
