@@ -4,6 +4,8 @@ import { Stack } from "expo-router";
 import "../global.css";
 import { useFonts } from "expo-font";
 import { Text, View, ActivityIndicator } from "react-native";
+import { Search } from "lucide-react-native";
+import NewChat from "./NewChat";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -27,7 +29,7 @@ export default function RootLayout() {
           name="NewChat"
           options={{
             headerShown: true,
-            title: "Select Contact",
+            title: "Start New Chat",
             headerStyle: {
               backgroundColor: "black",
             },
@@ -35,8 +37,19 @@ export default function RootLayout() {
             headerTitleStyle: {
               fontWeight: "light",
             },
+            headerRight: () => (
+              <Search
+                size={22}
+                color="#93FC00"
+                style={{ marginRight: 28 }}
+                onPress={() => {
+                  // Navigate to a search screen or open a modal
+                }}
+              />
+            ),
           }}
         />
+
       </Stack>
     </Provider>
   );

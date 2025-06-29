@@ -84,8 +84,7 @@ export default function Friends() {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-    
-        className="absolute bottom-7 right-10 bg-gray-800 p-4 rounded-full  border shadow-lg"
+        className="absolute bottom-7 right-10 bg-gray-800 p-4 rounded-lg shadow-lg"
         onPress={handleStartChat}
       >
         <MessageSquarePlus size={24} color="#93FC00"  />
