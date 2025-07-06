@@ -1,14 +1,15 @@
+import dotenv from "dotenv";
+dotenv.config(); 
 import { prisma } from "../utils/prismaClient.js";
 import axios from "axios";
-import dotenv from "dotenv";
-dotenv.config();
 import jwt from "jsonwebtoken";
+
 
 console.log("Client ID:", process.env.GITHUB_CLIENT_ID);
 console.log("Client Secret:", process.env.GITHUB_CLIENT_SECRET);
 
 export async function handleLogin(req, res) {
-  const { code } = req.body;
+  const { code , code_verifier} = req.body;
 
   console.log("Github code received", code);
 
@@ -26,6 +27,7 @@ export async function handleLogin(req, res) {
         code,
         client_id: process.env.GITHUB_CLIENT_ID,
         client_secret: process.env.GITHUB_CLIENT_SECRET,
+         ...(code_verifier && { code_verifier }),
       },
       {
         headers: {
@@ -34,13 +36,14 @@ export async function handleLogin(req, res) {
       }
     );
 
+
     const githubAccessToken = tokenRes.data.access_token;
 
     console.log("github res", githubAccessToken);
 
     const userInfoRes = await axios.get("https://api.github.com/user", {
       headers: {
-        Authorization: `token ${githubAccessToken}`,
+        Authorization: `Bearer ${githubAccessToken}`,
         Accept: "application/vnd.github+json",
       },
     });
