@@ -61,7 +61,7 @@ export default function Friends() {
         renderItem={({ item }) => (
           
           
-          <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center">
+          <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
             {/* Avatar Container with Status Indicator */}
             <View className="relative mr-3">
               <Image
@@ -75,8 +75,8 @@ export default function Friends() {
             </View>
 
             <View>
-              <Text className="text-white text-lg font-semibold">{item.name}</Text>
-              <Text className="text-gray-400">{item.status}</Text>
+              <Text className="text-white text-lg">{item.name}</Text>
+              <Text className="text-gray-400 text-sm">{item.status}</Text>
             </View>
           </View>
         )}
@@ -84,7 +84,7 @@ export default function Friends() {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        className="absolute bottom-7 right-10 bg-gray-800 p-4 rounded-lg shadow-lg"
+        className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
         onPress={handleStartChat}
       >
         <MessageSquarePlus size={24} color="#93FC00"  />

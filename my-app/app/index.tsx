@@ -13,6 +13,8 @@ import { useAppDispatch } from "../hooks/hooks";
 import { authUser } from "@/types/authUser";
 import { setAuthUser } from "@/slices/authSlice";
 import { setToken, getToken } from "@/hooks/authToken";
+import { Dimensions } from 'react-native';
+
 
 
 
@@ -97,10 +99,11 @@ export default function Index () {
         default: makeRedirectUri({     // For mobile
           scheme: 'myapp',
           path: 'oauth'
-        })
+        }),
+         usePKCE: true,
       })
     },
-    discovery
+    discovery,
   );
 
 
@@ -116,7 +119,10 @@ export default function Index () {
           const res = await axios<ApiResponse<authUser>>({
             method: 'post',
             url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
-            data: { code },
+            data: { 
+              code,
+              code_verifier: request.codeVerifier,
+            },
           });
 
           console.log('Login successful:', res.data);
@@ -158,6 +164,10 @@ export default function Index () {
 
     handleOAuth();
   }, [response]);
+
+
+  const { width } = Dimensions.get('window');
+  const svgSize = width * 0.2; // 20% of screen width
 
   return (
     <View
