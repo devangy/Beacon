@@ -43,7 +43,7 @@ export default function RootLayout() {
                 color="#93FC00"
                 style={{ marginRight: 28 }}
                 onPress={() => {
-                  // Navigate to a search screen or open a modal
+                  
                 }}
               />
             ),

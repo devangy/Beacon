@@ -23,3 +23,7 @@ const messageSlice = createSlice({
         },
     }
 })
+
+
+export const { addNewMessage} = messageSlice.actions;
+export default messageSlice.reducer;

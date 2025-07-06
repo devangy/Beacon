@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 import { Chat } from "@/types/chat";
+import { ApiResponse } from "@/types/api.response";
 
 type GetUserChatsArgs = {
   userId: string;
@@ -11,8 +12,8 @@ type GetUserChatsArgs = {
 export const useGetUserChats = ({ userId, token }: GetUserChatsArgs) => {
   return useQuery({
     queryKey: ["userChats", userId],
-    queryFn: async (): Promise<Chat[]> => {
-      const response = await axios.get(`/api/chats/user/${userId}`, {
+    queryFn: async () => {
+      const response = await axios.get<ApiResponse<Chat[]>>(`/api/chats/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
