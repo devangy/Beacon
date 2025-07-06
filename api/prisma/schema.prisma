@@ -18,13 +18,13 @@ model User {
   githubId  Int           @unique
   username  String
   avatarUrl String
-  chats     ChatMember[]  // Through join table
+  chats     Member[]  // Through join table
   createdAt DateTime      @default(now())
-  friends   UserFriend[]  @relation("UserFriends")
-  addedBy   UserFriend[]  @relation("FriendsUsers")
+  friends   Friend[]  @relation("UserFriends")
+  addedBy   Friend[]  @relation("FriendsUsers")
 }
 
-model UserFriend {
+model Friend {
   id        String   @id @default(uuid())
   user      User     @relation("UserFriends", fields: [userId], references: [id])
   friend    User     @relation("FriendsUsers", fields: [friendId], references: [id])
@@ -41,7 +41,7 @@ model Chat {
   name         String?       // group name
   isGroup      Boolean       @default(false)
   messages     Message[]
-  members      ChatMember[]  // many-to-many via ChatMember
+  members      Member[]  // many-to-many via ChatMember
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -49,14 +49,14 @@ model Chat {
 model Message {
   id        String      @id @default(uuid())
   content   String
-  sender    ChatMember  @relation(fields: [senderId], references: [id])
+  sender    Member  @relation(fields: [senderId], references: [id])
   senderId  String
   chat      Chat        @relation(fields: [chatId], references: [id])
   chatId    String
   createdAt DateTime    @default(now())
 }
 
-model ChatMember {
+model Member {
   id        String     @id @default(uuid())
   user      User       @relation(fields: [userId], references: [id])
   userId    String
