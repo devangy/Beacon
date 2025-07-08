@@ -2,6 +2,8 @@ import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
 import ChatScreen from "../ChatScreen";
 import { MessageSquarePlus } from 'lucide-react-native';
 import { useRouter } from "expo-router";
+import { useGetUserChats } from "@/hooks/getUserChats";
+import { useAppSelector } from "@/hooks/hooks";
 
 
 
@@ -43,24 +45,47 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function Friends() {
+export default function Chats() {
+
+  const userId = useAppSelector((state) => state.auth.userId);
+  const token = useAppSelector((state) => state.auth.accessToken);
+
+  console.log("User ID:", userId);
+  console.log("Token:", token);
+
+  const { data: chats, isLoading } = useGetUserChats({ userId, token });
+
+  // const memberNames = chats?.flatMap(chat =>
+  //   chat.members.map(member => member.name)
+  // );
+
+
+  // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array 
+
+  const fetchedChats = chats?.map((chat) => ({
+    id: chat.id,
+  }));
+
+  console.log('fetched chats', fetchedChats);
+
+
+  console.log("Chats data:", chats);
 
   const router = useRouter();
-
   const handleStartChat = () => {
     console.log("Start new chat");
-    router.push("/NewChat")
+    router.push("/NewChat");
   };
 
   return (
     <View className="flex-1 bg-black p-4">
       <FlatList
-        data={mockFriends}
+        data={chats}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          
-          
+
+
           <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
             {/* Avatar Container with Status Indicator */}
             <View className="relative mr-3">
@@ -87,7 +112,7 @@ export default function Friends() {
         className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
         onPress={handleStartChat}
       >
-        <MessageSquarePlus size={24} color="#93FC00"  />
+        <MessageSquarePlus size={24} color="#93FC00" />
       </TouchableOpacity>
     </View>
   );

@@ -1,11 +1,14 @@
-import { Provider } from "react-redux";
+import { Provider as ReduxProvider } from "react-redux";
 import { store } from "@/store/store";
 import { Stack } from "expo-router";
 import "../global.css";
 import { useFonts } from "expo-font";
-import { Text, View, ActivityIndicator } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { Search } from "lucide-react-native";
-import NewChat from "./NewChat";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Create the QueryClient once
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -21,36 +24,37 @@ export default function RootLayout() {
   }
 
   return (
-    <Provider store={store}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="home/(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="NewChat"
-          options={{
-            headerShown: true,
-            title: "Start New Chat",
-            headerStyle: {
-              backgroundColor: "black",
-            },
-            headerTintColor: "white",
-            headerTitleStyle: {
-              fontWeight: "light",
-            },
-            headerRight: () => (
-              <Search
-                size={22}
-                color="#93FC00"
-                style={{ marginRight: 28 }}
-                onPress={() => {
-                  
-                }}
-              />
-            ),
-          }}
-        />
-
-      </Stack>
-    </Provider>
+    <ReduxProvider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="home/(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="NewChat"
+            options={{
+              headerShown: true,
+              title: "Start New Chat",
+              headerStyle: {
+                backgroundColor: "black",
+              },
+              headerTintColor: "white",
+              headerTitleStyle: {
+                fontWeight: "light",
+              },
+              headerRight: () => (
+                <Search
+                  size={22}
+                  color="#93FC00"
+                  style={{ marginRight: 28 }}
+                  onPress={() => {
+                    // future: toggle something
+                  }}
+                />
+              ),
+            }}
+          />
+        </Stack>
+      </QueryClientProvider>
+    </ReduxProvider>
   );
 }

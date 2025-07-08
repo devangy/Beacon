@@ -9,11 +9,12 @@ type GetUserChatsArgs = {
   token: string;
 };
 
+
 export const useGetUserChats = ({ userId, token }: GetUserChatsArgs) => {
   return useQuery({
     queryKey: ["userChats", userId],
     queryFn: async () => {
-      const response = await axios.get<ApiResponse<Chat[]>>(`/api/chats/user/${userId}`, {
+      const response = await axios.get<ApiResponse<Chat[]>>(`http://localhost:3000/api/chats/all-chats`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

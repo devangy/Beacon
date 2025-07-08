@@ -2,10 +2,21 @@ import { prisma } from "../utils/prismaClient.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-export const getUserChats = async (req, res) => {
-  //   const token = req.headers.authorization.split(" ")[1]; // extracting token by splitting Bearer Token into array and accesing token [1]
+import jwt from 'jsonwebtoken';
 
-  //   if (!token) res.status(401).json("No token provided for authentication");
+export const getUserChats = async (req, res) => {
+
+  const authHeader = req.headers.authorization; 
+  const token = req.headers.authorization.split(" ")[1]; // extracting token by splitting Bearer Token into array and accesing token [1]
+
+  if(!token) return res.status(401).json({ message: 'No token' });
+
+
+  const payload = jwt.verify(token, process.env.JWT_SECRET);
+  const userId = payload.id;
+
+  console.log('userId extrct', userId)
+
 
   const chats = await prisma.chat.findMany({
     where: {
@@ -23,6 +34,12 @@ export const getUserChats = async (req, res) => {
   });
 
   console.log("allchat", chats);
+
+  res.status(200).json({
+    success: true,
+    data: chats,
+    message: "all user chats fetched"
+  })
 };
 
 const userId = "ae2ac7dc-403f-48ba-8dfe-e1837a2db958";
