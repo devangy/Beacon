@@ -2,21 +2,18 @@ import { prisma } from "../utils/prismaClient.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 export const getUserChats = async (req, res) => {
-
-  const authHeader = req.headers.authorization; 
+  const authHeader = req.headers.authorization;
   const token = req.headers.authorization.split(" ")[1]; // extracting token by splitting Bearer Token into array and accesing token [1]
 
-  if(!token) return res.status(401).json({ message: 'No token' });
-
+  if (!token) return res.status(401).json({ message: "No token" });
 
   const payload = jwt.verify(token, process.env.JWT_SECRET);
   const userId = payload.id;
 
-  console.log('userId extrct', userId)
-
+  console.log("userId extrct", userId);
 
   const chats = await prisma.chat.findMany({
     where: {
@@ -26,9 +23,19 @@ export const getUserChats = async (req, res) => {
         },
       },
     },
-    include: {
+    select: {
+      id: true,
+      isGroup: true,
       members: {
-        include: { user: true },
+        select: {
+          user: {
+            select: {
+              id: true,
+              username: true, // Only include specific fields
+              avatarUrl: true,
+            },
+          },
+        },
       },
     },
   });
@@ -38,8 +45,8 @@ export const getUserChats = async (req, res) => {
   res.status(200).json({
     success: true,
     data: chats,
-    message: "all user chats fetched"
-  })
+    message: "all user chats fetched",
+  });
 };
 
 const userId = "ae2ac7dc-403f-48ba-8dfe-e1837a2db958";
@@ -81,16 +88,16 @@ export const startNewChat = async (req, res) => {
 
   // create a chat with both the user and the user's friendId
 
-    const newChat = await prisma.chat.create({
-      data: {
-        members: {
-          create: [
-            { user: { connect: { id: currentUserId } } },
-            { user: { connect: { id: friendId } } },
-          ],
-        },
+  const newChat = await prisma.chat.create({
+    data: {
+      members: {
+        create: [
+          { user: { connect: { id: currentUserId } } },
+          { user: { connect: { id: friendId } } },
+        ],
       },
-    });
+    },
+  });
 
   res.status(200).json({
     success: true,
