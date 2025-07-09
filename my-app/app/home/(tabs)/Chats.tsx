@@ -1,9 +1,10 @@
-import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, Pressable } from "react-native";
 import ChatScreen from "../ChatScreen";
 import { MessageSquarePlus } from 'lucide-react-native';
 import { useRouter } from "expo-router";
 import { useGetUserChats } from "@/hooks/getUserChats";
 import { useAppSelector } from "@/hooks/hooks";
+import { Chat, Member } from "@/types/chat";
 
 
 
@@ -57,15 +58,31 @@ export default function Chats() {
 
   // const memberNames = chats?.flatMap(chat =>
   //   chat.members.map(member => member.name)
-  // );
+  // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array
+
+  const chatName = chats?.map((chat: Chat) => {
+    const otherMember = Array.isArray(chat.members)
+      ? chat.members.find((member: Member) => member.user && member.user.id !== userId)
+      : undefined;
+    return otherMember?.user?.username;
+  });
+
+  const fetchedChats = chats?.map((chat: any) => {
+    const otherMember = Array.isArray(chat.members)
+      ? chat.members.find((member: any) => member.user && member.user.id !== userId)
+      : undefined;
+    return {
+      id: chat.id,
+      name: otherMember?.user?.username || "Unknown",
+      avatarUrl: otherMember?.user?.avatarUrl || "",
+      // status: "Offline", // Placeholder — adjust if you store real-time status
+    };
+  });
 
 
-  // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array 
 
-  const fetchedChats = chats?.map((chat) => ({
-    id: chat.id,
-  }));
 
+  // console.log('memberNames', allUserNames)
   console.log('fetched chats', fetchedChats);
 
 
@@ -80,34 +97,36 @@ export default function Chats() {
   return (
     <View className="flex-1 bg-black p-4">
       <FlatList
-        data={chats}
+        data={fetchedChats}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
+          <Pressable onPress={() => {
+            console.log("Selected chat:", item);
+          }}>
+            <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
+              {/* Avatar Container with Status Indicator */}
+              <View className="relative mr-3">
+                <Image
+                  source={{ uri: item.avatarUrl }}
+                  className="w-10 h-10 rounded-full"
+                />
+                {/* Status Indicator */}
+                <View
+                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${getStatusColor(item.status)}`}
+                />
+              </View>
 
-
-          <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
-            {/* Avatar Container with Status Indicator */}
-            <View className="relative mr-3">
-              <Image
-                source={{ uri: getAvatarUrl(item.name) }}
-                className="w-10 h-10 rounded-full"
-              />
-              {/* Status Indicator */}
-              <View
-                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${getStatusColor(item.status)}`}
-              />
+              <View>
+                <Text className="text-white text-lg">{item.name}</Text>
+                <Text className="text-gray-400 text-sm">{item.status}</Text>
+              </View>
             </View>
-
-            <View>
-              <Text className="text-white text-lg">{item.name}</Text>
-              <Text className="text-gray-400 text-sm">{item.status}</Text>
-            </View>
-          </View>
+          </Pressable>
         )}
       />
 
-      {/* Floating Action Button */}
+      {/* Floating New Chat Button */}
       <TouchableOpacity
         className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
         onPress={handleStartChat}
