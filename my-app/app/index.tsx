@@ -8,7 +8,7 @@ import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 import { useRef } from 'react';
 import axios from 'axios'
 import { useRouter } from "expo-router";
-import { ApiResponse } from "@/types/api.response";
+import { ApiResponse } from "@/types/api-response";
 import { useAppDispatch } from "../hooks/hooks";
 import { authUser } from "@/types/authUser";
 import { setAuthUser } from "@/slices/authSlice";
@@ -76,7 +76,7 @@ export default function Index () {
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.95,
+      toValue: 0.70,
       useNativeDriver: true,
     }).start();
   };
@@ -176,7 +176,7 @@ export default function Index () {
       <View className="flex flex-row w-full items-center justify-center mt-60 gap-10">
         {/* Wrapped Image inside a View */}
         <View className="flex h-20 w-20 p-4 bg-green-300 rounded-xl justify-center items-center">
-          <Svg height={92} width={92} />
+          <Svg height={92} width={92} className="lg:h-96" />
         </View>
         <Text className="flex text-7xl font-light  mt-4 text-white subpixel-antialiased">
           Beacon

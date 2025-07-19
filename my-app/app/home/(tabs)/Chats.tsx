@@ -1,11 +1,10 @@
 import { View, Text, FlatList, Image, TouchableOpacity, Pressable } from "react-native";
-import ChatScreen from "../ChatScreen";
+import ChatScreen from "@/app/home/ChatScreen";
 import { MessageSquarePlus } from 'lucide-react-native';
 import { useRouter } from "expo-router";
 import { useGetUserChats } from "@/hooks/getUserChats";
-import { useAppSelector } from "@/hooks/hooks";
+import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { Chat, Member } from "@/types/chat";
-
 
 
 // Mock friends data without hardcoded avatar URLs
@@ -51,26 +50,26 @@ export default function Chats() {
   const userId = useAppSelector((state) => state.auth.userId);
   const token = useAppSelector((state) => state.auth.accessToken);
 
+  if (!userId) throw new Error("User ID is not available")
+
+  if (!token) throw new Error("Access token is not available");
+
+  const dispatch = useAppDispatch();
+
   console.log("User ID:", userId);
   console.log("Token:", token);
 
-  const { data: chats, isLoading } = useGetUserChats({ userId, token });
+
+  const { data: chats, isLoading } = useGetUserChats(userId , token);
 
   // const memberNames = chats?.flatMap(chat =>
   //   chat.members.map(member => member.name)
   // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array
 
-  const chatName = chats?.map((chat: Chat) => {
-    const otherMember = Array.isArray(chat.members)
-      ? chat.members.find((member: Member) => member.user && member.user.id !== userId)
-      : undefined;
-    return otherMember?.user?.username;
-  });
 
-  const fetchedChats = chats?.map((chat: any) => {
-    const otherMember = Array.isArray(chat.members)
-      ? chat.members.find((member: any) => member.user && member.user.id !== userId)
-      : undefined;
+  const members = chats?.map((chat: any) => {
+    const otherMember = Array.isArray(chat.members) ? chat.members.find((member: any) => member.user && member.user.id !== userId) : undefined;
+    // finding the other member element int the members array of the chat object and returning a new object with simp
     return {
       id: chat.id,
       name: otherMember?.user?.username || "Unknown",
@@ -79,11 +78,11 @@ export default function Chats() {
     };
   });
 
-
+ console.log("chats data:", members);
 
 
   // console.log('memberNames', allUserNames)
-  console.log('fetched chats', fetchedChats);
+  // console.log('fetched chats', fetchedChats);
 
 
   console.log("Chats data:", chats);
@@ -91,19 +90,18 @@ export default function Chats() {
   const router = useRouter();
   const handleStartChat = () => {
     console.log("Start new chat");
-    router.push("/NewChat");
+    // dispatch({ type: "", payload: {} });
+    router.push("/home/ChatScreen");
   };
 
   return (
     <View className="flex-1 bg-black p-4">
       <FlatList
-        data={fetchedChats}
+        data={members}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable onPress={() => {
-            console.log("Selected chat:", item);
-          }}>
+          <Pressable onPress={handleStartChat}>
             <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
               {/* Avatar Container with Status Indicator */}
               <View className="relative mr-3">

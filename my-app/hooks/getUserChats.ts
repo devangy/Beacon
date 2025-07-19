@@ -2,15 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 import { Chat } from "@/types/chat";
-import { ApiResponse } from "@/types/api.response";
-
-type GetUserChatsArgs = {
-  userId: string;
-  token: string;
-};
+import { ApiResponse } from "@/types/api-response";
 
 
-export const useGetUserChats = ({ userId, token }: GetUserChatsArgs) => {
+export const useGetUserChats = (userId: string , token?: string | undefined) => {
   return useQuery({
     queryKey: ["userChats", userId],
     queryFn: async () => {
