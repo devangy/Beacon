@@ -5,7 +5,7 @@ import { useAppSelector } from "@/hooks/hooks";
 import { useState } from "react";
 import { Search } from 'lucide-react-native';
 import { useRef } from 'react';
-
+import { getUserFriends } from "@/hooks/getUserFriends";
 
 
 
@@ -15,7 +15,7 @@ type FriendStatus = 'Online' | 'Away' | 'Offline';
 
 interface Friend {
   id: string;
-  name: string;
+  username: string;
   status: FriendStatus;
 }
 
@@ -46,28 +46,35 @@ export default function Friends() {
   const router = useRouter();
 
 
+  const userId = useAppSelector((state) => state.auth.userId);
+
+  if (!userId) { throw new Error("User ID not provided"); }
+
+  const { data: friends, isLoading, isError } = getUserFriends(userId);
+
+
+  console.log("Friends Data:", friends);
+
+  const filteredFriends = friends?.map((friend) => friend.name);
+
+
+
+  console.log("Formatted Friends List:", filteredFriends);
+
+
+  // const token = useAppSelector((state) => state.auth.accessToken);
   const searchBoxOpen = useAppSelector((state) => state.search.searchBoxOpen);
 
   const [searchText, searchBoxText] = useState('')
 
   const inputRef = useRef<TextInput>(null);
 
+  // const filteredFriends = friends?.filter((friend) =>
+  //   friend.name.toLowerCase().includes(searchText.toLowerCase())
+  // );
 
 
-  const filteredFriends = mockFriends.filter((friend) =>
-    friend.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-
-  const navigateToChat = (friend: Friend) => {
-    router.push({
-      pathname: '/home/ChatScreen',
-      params: {
-        friendId: friend.id,
-        friendName: friend.name,
-        friendStatus: friend.status,
-      },
-    });
-  };
+  // const navigateToChat = (friend: Friend) => {\
 
   return (
     <View className="flex-1 bg-black p-4">
@@ -89,7 +96,7 @@ export default function Friends() {
 
       {/* Friend List */}
       <FlatList
-        data={filteredFriends}
+        data={friends}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -99,7 +106,7 @@ export default function Friends() {
           >
             <View className="relative mr-3">
               <Image
-                source={{ uri: getAvatarUrl(item.name) }}
+                source={{ uri: getAvatarUrl(item.avatarUrl) }}
                 className="w-10 h-10 rounded-full"
               />
               <View

@@ -2,7 +2,7 @@ import axios from 'axios';
 // import * as SecureStore from 'expo-secure-store';
 import { getToken } from '@/hooks/authToken';
 
-const api = axios.create({
+const api = axios.create({                     // axios intercept
   baseURL: process.env.EXPO_PUBLIC_BASE_URL,
   timeout: 10000,
   headers: {

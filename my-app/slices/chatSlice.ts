@@ -3,11 +3,11 @@ import { createAction, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Chat } from "@/types/chat";
 
 // chats state with chatId mapped to a single chat detail like name chat image url etc
-interface Chats {
-  [chatId: string]: Chat[];
-}
+// interface Chats {
+//   [chatId: string]: Chat[];
+// }
 
-const initialState: Chats = {};
+const initialState: Record<string, Chat[]> = {};
 
 const chatslice = createSlice({
   name: "chats",

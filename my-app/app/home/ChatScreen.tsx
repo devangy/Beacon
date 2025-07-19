@@ -37,7 +37,7 @@ const getAvatarUrl = (name: string): string => {
   return `https://ui-avatars.com/api/?name=${formattedName}&background=random&color=fff&size=128`;
 };
 
-const ChatScreen: React.FC = () => {
+const ChatScreen = () => {
   const params = useLocalSearchParams<ChatParams>();
   const { friendId, friendName, friendStatus } = params;
   

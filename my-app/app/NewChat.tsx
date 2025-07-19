@@ -1,7 +1,7 @@
 import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
-import api from "@/utils/axios";
+import api from "@/utils/axios-Intercept";
 
 // Mock data
 const mockFriends = [
