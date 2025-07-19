@@ -5,6 +5,7 @@ import cors from 'cors';
 
 import authRouter from './routes/auth.route.js'
 import chatRouter from './routes/chat.route.js'
+import friendRouter from './routes/friends.route.js'
 
 const app = express();
 const server = createServer(app);
@@ -33,7 +34,9 @@ app.use('/test', (req, res) => {
 
 
 app.use("/api/auth", authRouter);
-app.use("/api/chats", chatRouter)
+app.use("/api/chats", chatRouter);
+app.use("/api/friends", friendRouter);
+
 
   
 
