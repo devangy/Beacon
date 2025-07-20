@@ -20,6 +20,5 @@ export interface Chat {
   members: Member[];
   createdAt: string;
   updatedAt: string;
-
   imageUrl?: string;
 }
