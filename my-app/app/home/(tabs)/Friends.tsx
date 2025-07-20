@@ -1,4 +1,3 @@
-import { View, Text, FlatList, Image, TouchableOpacity, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import * as WebBrowser from 'expo-web-browser';
 import { useAppSelector } from "@/hooks/hooks";
@@ -6,6 +5,17 @@ import { useState } from "react";
 import { Search } from 'lucide-react-native';
 import { useRef } from 'react';
 import { getUserFriends } from "@/hooks/getUserFriends";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  Pressable,
+  View,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  Image,
+} from "react-native";
 
 
 
@@ -48,6 +58,8 @@ export default function Friends() {
 
   const userId = useAppSelector((state) => state.auth.userId);
 
+  console.log("userid", userId)
+
   if (!userId) { throw new Error("User ID not provided"); }
 
   const { data: friends, isLoading, isError } = getUserFriends(userId);
@@ -55,11 +67,6 @@ export default function Friends() {
 
   console.log("Friends Data:", friends);
 
-  const filteredFriends = friends?.map((friend) => friend.name);
-
-
-
-  console.log("Formatted Friends List:", filteredFriends);
 
 
   // const token = useAppSelector((state) => state.auth.accessToken);
@@ -77,49 +84,53 @@ export default function Friends() {
   // const navigateToChat = (friend: Friend) => {\
 
   return (
-    <View className="flex-1 bg-black p-4">
-
-      {/* Search Input Box*/}
-
-      {searchBoxOpen && (
-        <Pressable onPress={() => inputRef.current?.focus()}>
-          <TextInput
-            ref={inputRef}
-            placeholder="Search Username..."
-            className="bg-gray-800 text-gray-400 px-4 py-2 rounded-full mb-4"
-            underlineColorAndroid="transparent"
-          />
-        </Pressable>
-      )}
-
-
-
-      {/* Friend List */}
-      <FlatList
-        data={friends}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => navigateToChat(item)}
-            activeOpacity={0.7}
-            className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md"
-          >
-            <View className="relative mr-3">
-              <Image
-                source={{ uri: getAvatarUrl(item.avatarUrl) }}
-                className="w-10 h-10 rounded-full"
-              />
-              <View
-                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${getStatusColor(item.status)}`}
-              />
-            </View>
-            <View>
-              <Text className="text-white text-lg">{item.name}</Text>
-              <Text className="text-gray-400">{item.status}</Text>
-            </View>
-          </TouchableOpacity>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-black px-4 pt-4"
+    >
+      <View className="flex-1">
+        {searchBoxOpen && (
+          <Pressable onPress={() => inputRef.current?.focus()}>
+            <TextInput
+              ref={inputRef}
+              placeholder="Search Username..."
+              className="bg-gray-800 text-gray-400 px-4 py-2 rounded-full border-t mb-4 border"
+              underlineColorAndroid="transparent"
+            />
+          </Pressable>
         )}
-      />
-    </View>
+
+        <FlatList
+          data={friends}
+          keyExtractor={(item) => item.id}
+          className="border-t"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 80 }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => console.log(item)}
+              activeOpacity={0.7}
+              className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md"
+            >
+              <View className="relative mr-3">
+                <Image
+                  source={{ uri: item.avatarUrl }}
+                  className="w-10 h-10 rounded-full"
+                />
+                <View
+                  className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${getStatusColor(
+                    item.status
+                  )}`}
+                />
+              </View>
+              <View>
+                <Text className="text-white text-lg">{item.username}</Text>
+                <Text className="text-gray-400">{item.status}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 }
