@@ -5,6 +5,8 @@ import { useRouter } from "expo-router";
 import { useGetUserChats } from "@/hooks/getUserChats";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { Chat, Member } from "@/types/chat";
+import { useMemo } from "react";
+import { setChatId, setOtherMember } from "@/slices/chatSlice";
 
 
 // Mock friends data without hardcoded avatar URLs
@@ -50,6 +52,7 @@ export default function Chats() {
   const userId = useAppSelector((state) => state.auth.userId);
   const token = useAppSelector((state) => state.auth.accessToken);
 
+
   if (!userId) throw new Error("User ID is not available")
 
   if (!token) throw new Error("Access token is not available");
@@ -60,25 +63,28 @@ export default function Chats() {
   console.log("Token:", token);
 
 
-  const { data: chats, isLoading } = useGetUserChats(userId , token);
+  const { data: chats, isLoading } = useGetUserChats(userId, token);
 
   // const memberNames = chats?.flatMap(chat =>
   //   chat.members.map(member => member.name)
   // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array
 
+  const members = useMemo(() => {
+    return chats?.map(chat => {
+      const otherMember = chat.members.find(m => m.user.id !== userId);
+      return {
+        id: chat.id,
+        name: otherMember?.user?.username ?? "Unknown",
+        avatarUrl: otherMember?.user?.avatarUrl ?? "",
+      };
+    });
+  }, [chats, userId]);
 
-  const members = chats?.map((chat: any) => {
-    const otherMember = Array.isArray(chat.members) ? chat.members.find((member: any) => member.user && member.user.id !== userId) : undefined;
-    // finding the other member element int the members array of the chat object and returning a new object with simp
-    return {
-      id: chat.id,
-      name: otherMember?.user?.username || "Unknown",
-      avatarUrl: otherMember?.user?.avatarUrl || "",
-      // status: "Offline", // Placeholder — adjust if you store real-time status
-    };
-  });
 
- console.log("chats data:", members);
+
+  console.log("chats data:", members);
+
+  const chatWithUser = members?.[0]
 
 
   // console.log('memberNames', allUserNames)
@@ -88,9 +94,12 @@ export default function Chats() {
   console.log("Chats data:", chats);
 
   const router = useRouter();
-  const handleStartChat = () => {
-    console.log("Start new chat");
-    // dispatch({ type: "", payload: {} });
+  const handleStartChat = (chatId: string) => {
+    console.log("Start new chat", chatId);
+
+
+    dispatch(setChatId(chatId));       
+    dispatch(setOtherMember(chatWithUser));
     router.push("/home/ChatScreen");
   };
 
@@ -101,7 +110,7 @@ export default function Chats() {
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable onPress={handleStartChat}>
+          <Pressable onPress={() => handleStartChat(item.id)}>
             <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
               {/* Avatar Container with Status Indicator */}
               <View className="relative mr-3">
@@ -127,7 +136,7 @@ export default function Chats() {
       {/* Floating New Chat Button */}
       <TouchableOpacity
         className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
-        onPress={handleStartChat}
+        onPress={() => handleStartChat}
       >
         <MessageSquarePlus size={24} color="#93FC00" />
       </TouchableOpacity>
