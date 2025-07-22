@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,11 @@ import {
   ListRenderItemInfo
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowRight, SendHorizontal } from 'lucide-react-native';
+import { SendHorizontal } from 'lucide-react-native';
 
 import { socket } from '../../socket'
+import axios from 'axios';
+import { useAppSelector } from '@/hooks/hooks';
 
 
 
@@ -44,10 +46,23 @@ const ChatScreen = () => {
   const [message, setMessage] = useState<string>('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
+  const otherMember = useAppSelector((state) => state.chat.otherMember);
+  const chatId = useAppSelector((state) => state.chat.selectedChatId);
+
+  console.log('otherMember', otherMember)
+  console.log('chatID', chatId)
+
+
 
   // Initialize chat history when component mounts
   useEffect(() => {
     // Add a welcome message from the friend
+
+    async () => {
+      const messages = axios.get(`http://localhost:3000/api/messages/${chatId}`, )
+    }
+
+
     setChatHistory([
       {
         id: '1',
@@ -59,7 +74,7 @@ const ChatScreen = () => {
   }, [friendId]); // Reset chat when friend changes
 
   const sendMessage = (): void => {
-    if (message.trim() === '') return;
+    if (message.trim() === '') return;  // if the message is empty simply return dont send it
     // socket.emit('message', 'gaynigger');
 
 
@@ -97,8 +112,8 @@ const ChatScreen = () => {
       className={`mb-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
     >  
       <View
-        className={`rounded-lg px-4 py-2 max-w-[65%] ${
-          isUser ? 'bg-blue-600 rounded-tr-none' : 'bg-gray-700 rounded-tl-none'
+        className={`flex  items-center justify-center rounded-lg px-4 py-2 max-w-[65%] ${
+          isUser ? 'bg-blue-700 rounded-br-none' : 'bg-gray-700 rounded-tl-none'
         }`}
       > 
         <Text className="text-white">{item.text}</Text>
@@ -122,13 +137,13 @@ const ChatScreen = () => {
         }}
       />
 
-      <View className="flex-row items-center p-2 bg-gray-900">
+      <View className="flex-row items-center p-2  bg-gray-900">
         <Image
-          source={{ uri: getAvatarUrl(friendName) }}
-          className="w-8 h-8 rounded-full mr-2"
+          source={{ uri: otherMember?.avatarUrl }}
+          className="w-9 h-9 rounded-full ml-2"
         />
-        <Text className="text-gray-400">
-          {friendName} - {friendStatus}
+        <Text className=" text-lg  text-gray-200 ml-4">
+          {otherMember?.name}
         </Text>
       </View>
 

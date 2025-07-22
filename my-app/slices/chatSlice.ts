@@ -1,29 +1,37 @@
-import { createAction, createSlice, PayloadAction } from "@reduxjs/toolkit";
-
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Chat } from "@/types/chat";
+import { User } from "@/types/user";
+type chatState = {
+  chats: Record<string, Chat>;
+  selectedChatId: string | null;
+  otherMember: User | null
+};
 
-// chats state with chatId mapped to a single chat detail like name chat image url etc
-// interface Chats {
-//   [chatId: string]: Chat[];
-// }
-
-const initialState: Record<string, Chat[]> = {};
+const initialState: chatState = {
+  chats: {},
+  selectedChatId: null,
+  otherMember: null,
+};
 
 const chatslice = createSlice({
   name: "chats",
   initialState,
   reducers: {
     setUserChats: (state, action: PayloadAction<Chat[]>) => {
-      action.payload.forEach((chat) => {  
-        if (!state[chat.id]) {          // if chat id is not in our state  
-          state[chat.id] = [];          // add chatid to state and initialize with empty array
-        }
-        state[chat.id].push(chat);      // push the chat to our chatid
+      action.payload.forEach((chat) => {
+        state.chats[chat.id] = chat;
       });
+    },
+
+    setChatId: (state, action: PayloadAction<string>) => {
+      state.selectedChatId = action.payload;
+    },
+
+    setOtherMember: (state, action: PayloadAction<User>) => {
+      state.otherMember = action.payload;
     },
   },
 });
 
-
-export const { setUserChats } = chatslice.actions;
+export const { setUserChats, setChatId, setOtherMember } = chatslice.actions;
 export default chatslice.reducer;

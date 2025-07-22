@@ -121,7 +121,7 @@ export default function Index () {
             url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
             data: { 
               code,
-              code_verifier: request.codeVerifier,
+              code_verifier: request?.codeVerifier,
             },
           });
 

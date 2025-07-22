@@ -1,9 +1,6 @@
-export interface User {
-  id: string;
-  username: string;
-  avatarUrl: string;
-  createdAt?: string;
-}
+import { Message } from "./message";
+import { User } from "./user";
+
 
 export interface Member {
   id: string;
@@ -18,6 +15,7 @@ export interface Chat {
   name: string | null;
   isGroup: boolean;
   members: Member[];
+  messages: Message[];
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
