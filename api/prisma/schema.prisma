@@ -42,7 +42,6 @@ model Chat {
   isGroup      Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-
   messages     Message[]
   members      Member[]  // many-to-many via ChatMember
 }
@@ -53,7 +52,6 @@ model Message {
   senderId  String
   chatId    String
   createdAt DateTime    @default(now())
-  
   sender    Member  @relation(fields: [senderId], references: [id])
   chat      Chat        @relation(fields: [chatId], references: [id])
 }
