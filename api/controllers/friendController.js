@@ -4,31 +4,35 @@ import { prisma } from "../utils/prismaClient.js";
 
 export const getFriends = async (req, res) => {
   try {
-    const friends = await prisma.user.findMany({
-      where: { id: req.params.userId },
-      include: {
-        friends: {
-          where: {
-            status: "accepted", // ✅ This is correct now
-          },
-          include: {
-            friend: {
-              select: {
-                id: true,
-                username: true,
-                avatarUrl: true,
-              },
-            },
+
+    const { userId  } = req.params
+
+    if(!userId) return res.status(400).json({message: "UserID not provided" , success: false}) 
+
+    const friends = await prisma.friend.findMany({
+      where: {
+        userId: userId,
+        status: "accepted",
+      },
+      select: {
+        friend: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
           },
         },
       },
     });
 
-    console.log("all friends", friends);
 
+    const actualFriends = friends.map((f) => f.friend);
+
+
+    console.log("all friends", friends);
     res.status(200).json({
       success: true,
-      data: friends,
+      data: actualFriends,
       message: "Friends retrieved successfully",
     });
   } catch (error) {
