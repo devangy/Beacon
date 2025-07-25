@@ -15,8 +15,8 @@ import { SendHorizontal } from 'lucide-react-native';
 
 import { socket } from '../../socket'
 import axios from 'axios';
-import { useAppSelector } from '@/hooks/hooks';
-
+import { useAppDispatch, useAppSelector } from '@/hooks/hooks';
+import { setMessagesByChatId } from '@/slices/messageSlice';
 
 
 interface ChatMessage {
@@ -40,38 +40,54 @@ const getAvatarUrl = (name: string): string => {
 };
 
 const ChatScreen = () => {
-  const params = useLocalSearchParams<ChatParams>();
-  const { friendId, friendName, friendStatus } = params;
+  // const params = useLocalSearchParams<ChatParams>();
+  // const { frieIdnd, friendName, friendStatus } = params;
 
   const [message, setMessage] = useState<string>('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   const otherMember = useAppSelector((state) => state.chat.otherMember);
   const chatId = useAppSelector((state) => state.chat.selectedChatId);
+  const userId = useAppSelector((state) => state.auth.userId)
+  const messages = useAppSelector((state)=> state.message.messages)
+
+  console.log('reduxmessage', messages)
 
   console.log('otherMember', otherMember)
   console.log('chatID', chatId)
 
+  const dispatch = useAppDispatch()
 
 
   // Initialize chat history when component mounts
   useEffect(() => {
     // Add a welcome message from the friend
 
-    async () => {
-      const messages = axios.get(`http://localhost:3000/api/messages/${chatId}`, )
-    }
+    (async () => {
+      const response = await axios.get(`http://localhost:3000/api/messages/${chatId}`)
+      console.log('messages', response.data)
 
 
-    setChatHistory([
-      {
-        id: '1',
-        sender: 'friend',
-        text: `Hey there! What's up?`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-  }, [friendId]); // Reset chat when friend changes
+      if (!chatId) return 
+
+      dispatch(setMessagesByChatId({ chatId, messages: response.data }));
+
+
+    })()
+
+
+
+
+
+    // setChatHistory([
+    //   {
+    //     id: '1',
+    //     sender: 'friend',
+    //     text: `Hey there! What's up?`,
+    //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    //   }
+    // ]);
+  }, []); // Reset chat when friend changes
 
   const sendMessage = (): void => {
     if (message.trim() === '') return;  // if the message is empty simply return dont send it
@@ -108,17 +124,19 @@ const ChatScreen = () => {
   const isUser = item.sender === 'user';
 
   return (
+    // This is main container with nested message box views
     <View
-      className={`mb-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
+      className={`mb-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`} 
     >  
-      <View
+      <View // This is message box rendered based on user or the other chat member type based styling
         className={`flex  items-center justify-center rounded-lg px-4 py-2 max-w-[65%] ${
-          isUser ? 'bg-blue-700 rounded-br-none' : 'bg-gray-700 rounded-tl-none'
+          isUser ? 'bg-blue-600 rounded-br-none' : 'bg-gray-600 rounded-tl-none'
         }`}
       > 
-        <Text className="text-white">{item.text}</Text>
-      </View>
-      <Text className="text-gray-400 text-xs mt-1">
+        <Text className="text-white text-md font-sans">{item.text}</Text>
+      </View> 
+
+      <Text className="text-gray-400 text-xs mt-1"> 
         {item.timestamp}
       </Text>
     </View>
@@ -129,7 +147,7 @@ const ChatScreen = () => {
     <View className="flex-1 bg-black">
       <Stack.Screen
         options={{
-          title: friendName,
+          title: otherMember?.username,
           headerBackTitle: "Friends",
           headerTintColor: 'white',
           headerStyle: { backgroundColor: '#111' },
@@ -142,7 +160,7 @@ const ChatScreen = () => {
           source={{ uri: otherMember?.avatarUrl }}
           className="w-9 h-9 rounded-full ml-2"
         />
-        <Text className=" text-lg  text-gray-200 ml-4">
+        <Text className=" text-lg  text-gray-200 ml-4 font-sans">
           {otherMember?.name}
         </Text>
       </View>

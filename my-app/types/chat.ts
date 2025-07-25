@@ -11,7 +11,7 @@ export interface Member {
 }
 
 export interface Chat {
-  id: string;
+  id: string ;
   name: string | null;
   isGroup: boolean;
   members: Member[];
