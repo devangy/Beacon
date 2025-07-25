@@ -90,15 +90,16 @@ export default function Friends() {
     >
       <View className="flex-1">
         {searchBoxOpen && (
-          <Pressable onPress={() => inputRef.current?.focus()}>
+          <Pressable onPress={() => inputRef.current?.focus()} >
             <TextInput
               ref={inputRef}
               placeholder="Search Username..."
-              className="bg-gray-800 text-gray-400 px-4 py-2 rounded-full border-t mb-4 border"
-              underlineColorAndroid="transparent"
+              placeholderTextColor="#9CA3AF" // text-gray-400
+              className="bg-gray-800 text-gray-400 px-4 py-2 rounded-full "
             />
           </Pressable>
         )}
+
 
         <FlatList
           data={friends}
@@ -110,7 +111,7 @@ export default function Friends() {
             <TouchableOpacity
               onPress={() => console.log(item)}
               activeOpacity={0.7}
-              className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md"
+              className={`w-full mb-3 bg-gray-900  rounded-full  border-gray-600 p-1  flex-row items-center text-md ${searchBoxOpen ? 'mt-3' : ''}`}
             >
               <View className="relative mr-3">
                 <Image
@@ -124,7 +125,7 @@ export default function Friends() {
                 />
               </View>
               <View>
-                <Text className="text-white text-lg">{item.username}</Text>
+                <Text className="text-white text-lg ">{item.username}</Text>
                 <Text className="text-gray-400">{item.status}</Text>
               </View>
             </TouchableOpacity>
