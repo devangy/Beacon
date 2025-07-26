@@ -1,49 +1,67 @@
-import express from 'express';
-import { createServer } from 'node:http';
-import { Server } from 'socket.io';
-import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
-import morgan from 'morgan';
-import { fileURLToPath } from 'url';
-import authRouter from './routes/auth.route.js';
-import chatRouter from './routes/chat.route.js';
-import friendRouter from './routes/friends.route.js';
+import express from "express";
+import { createServer } from "node:http";
+import { Server } from "socket.io";
+import cors from "cors";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import authRouter from "./routes/auth.route.js";
+import chatRouter from "./routes/chat.route.js";
+import friendRouter from "./routes/friends.route.js";
 import messageRouter from "./routes/message.route.js";
+import compression from "compression";
+import pino from "pino";
+import pinoHttp from "pino-http";
+import pinoPretty from "pino-pretty";
+import pkg from "pino-multi-stream";
+import helmet from "helmet";
+// import { saveMessageToDB } from "./controllers/messageController.js";
+import { prisma } from "./utils/prismaClient.js";
 
-
-const app = express(); 
-const server = createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
+const { multistream } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const PORT = process.env.PORT || 3000;
 
 //  check if folder or create
-if (!fs.existsSync('logs')) {
-  fs.mkdirSync('logs');
+if (!fs.existsSync("logs")) {
+  fs.mkdirSync("logs");
 }
 
-// morgan logging to file
+// creating a write stream for logs
 const logStream = fs.createWriteStream(
-  path.join(__dirname, 'logs', 'access.log'), { flags: 'a' }
+  path.join(__dirname, "logs", "access.log"),
+  { flags: "a" }
 );
 
-app.use(morgan('combined', { stream: logStream })); // File logs
-// app.use(morgan('dev'));  // dev logging in console
+// Streams:  Console + File Stream
+const streams = [
+  { stream: pinoPretty({ colorize: true }) }, // Console
+  { stream: logStream }, // File
+];
+
+const logger = pino({}, multistream(streams));
+
+const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" },
+});
 
 // middlewares
+app.use(helmet());
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(compression());
+// pino-http logger
+app.use(pinoHttp({ logger }));
 
 // Test Route
-app.use('/test', (req, res) => {
-  res.json({ message: 'Test route working!' });
+app.use("/test", (req, res) => {
+  res.json({ message: "Test route working!" });
 });
 
 app.use("/api/auth", authRouter);
@@ -51,11 +69,27 @@ app.use("/api/chats", chatRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
 
-io.on('connection', (socket) => {
-  console.log('a user connected', socket.id);
+io.on("connection", (socket) => {
+  console.log("a user connected", socket.id);
 
-  socket.on('message', (msg) => {
-    console.log('Received message:', msg);
+  socket.on("message", async (newMessage, callback) => {
+    console.log("Received message:", newMessage);
+    // callback("This is ack");
+
+      const savedMessage = await prisma.message.create({
+        data: {
+          chatId: newMessage.chatId,
+          senderId: newMessage.senderId,
+          content: newMessage.content,
+          // createdAt: newMessage.createdAt
+        },
+      });
+
+      // Send success response with the saved message
+      callback({ success: true, message: savedMessage });
+      console.log("saved message", savedMessage);
+
+
   });
 });
 
@@ -66,6 +100,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-server.listen(3000, () => {
-  console.log('server running at http://localhost:3000');
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });

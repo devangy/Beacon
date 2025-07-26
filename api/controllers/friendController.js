@@ -33,7 +33,7 @@ export const getFriends = async (req, res) => {
     res.status(200).json({
       success: true,
       data: actualFriends,
-      message: "Friends retrieved successfully",
+      message: "Friends retrieved",
     });
   } catch (error) {
     console.error("Error retrieving friends:", error);

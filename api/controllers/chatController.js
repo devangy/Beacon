@@ -103,7 +103,7 @@ export const startNewChat = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "New Chat created with the user",
+    message: "New chat created with the user",
     data: {
       data: newChat,
     },
