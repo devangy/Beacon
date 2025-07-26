@@ -9,15 +9,23 @@ export const getChatMessages = async (req,res) => {
 
     if(!chatId) return res.status(400).json({message: "Chat ID is missing", success: false})
 
-    const messages = prisma.message.findMany({
+    const messages = await prisma.message.findMany({
         where: {chatId: chatId},
-        include: {
-            messages: true
-        }
     })
 
 
     console.log('messages', messages);
 
+    res.status(200).json({
+        success: true,
+        data: messages,
+        message: "Chat messages retrieved"
+    })
     
 }
+
+// export const saveMessageToDB = async (newMessage) => {
+
+//     console.log('newms', newMessage)
+//     conso
+// }
