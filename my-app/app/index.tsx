@@ -100,8 +100,8 @@ export default function Index () {
           scheme: 'myapp',
           path: 'oauth'
         }),
-         usePKCE: true,
-      })
+      }),
+      usePKCE: true,
     },
     discovery,
   );

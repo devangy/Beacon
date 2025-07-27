@@ -19,42 +19,37 @@ import { useAppDispatch, useAppSelector } from '@/hooks/hooks';
 import { setMessagesByChatId } from '@/slices/messageSlice';
 
 
-interface ChatMessage {
+interface Message {
   id: string;
-  sender: 'user' | 'friend';
-  text: string;
-  timestamp: string;
+  chatId: string
+  content: string
+  senderId: string;
+  createdAt: string;
 }
 
-// Define types for route params
-interface ChatParams {
-  friendId: string;
-  friendName: string;
-  friendStatus: string;
-}
-
-// Function to get avatar URL from a reliable API
-const getAvatarUrl = (name: string): string => {
-  const formattedName = encodeURIComponent(name);
-  return `https://ui-avatars.com/api/?name=${formattedName}&background=random&color=fff&size=128`;
-};
 
 const ChatScreen = () => {
-  // const params = useLocalSearchParams<ChatParams>();
-  // const { frieIdnd, friendName, friendStatus } = params;
 
   const [message, setMessage] = useState<string>('');
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [chatHistory, setChatHistory] = useState<Message[]>([]);
 
   const otherMember = useAppSelector((state) => state.chat.otherMember);
   const chatId = useAppSelector((state) => state.chat.selectedChatId);
   const userId = useAppSelector((state) => state.auth.userId)
-  const messages = useAppSelector((state)=> state.message.messages)
 
-  console.log('reduxmessage', messages)
+  if (!chatId) throw new Error("Unable to get chatId from state");
+
+  if (!userId) throw new Error("Unable to get chatId from state");
+
+  
+  const messagesFromState = useAppSelector((state) => state.message.messages.byId[chatId])
+
+  // console.log('reduxmessage', messages)
 
   console.log('otherMember', otherMember)
   console.log('chatID', chatId)
+
+
 
   const dispatch = useAppDispatch()
 
@@ -67,10 +62,19 @@ const ChatScreen = () => {
       const response = await axios.get(`http://localhost:3000/api/messages/${chatId}`)
       console.log('messages', response.data)
 
+      const messages = response.data.data
+
+      // const newmessages = messages.byId[chatId].data
+
+      // console.log(new)
 
       if (!chatId) return 
 
-      dispatch(setMessagesByChatId({ chatId, messages: response.data }));
+      dispatch(setMessagesByChatId({ chatId, messages }));
+
+      console.log('messagefromstate',messagesFromState)
+
+      // setChatHistory(messagesFromState)
 
 
     })()
@@ -94,34 +98,41 @@ const ChatScreen = () => {
     // socket.emit('message', 'gaynigger');
 
 
+    // create temp ID for msg
+    const tempId = Date.now().toString()
+
     // Add user message to chat
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: message.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    const newMessage: Message = {
+      id: tempId,
+      chatId: chatId,
+      senderId: userId,
+      content: message.trim(),
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    socket.emit('message', newMessage);
-    setChatHistory(prevChat => [...prevChat, newMessage]);
-    setMessage('');
+    socket.emit('message', newMessage, (response: string) => {
+      console.log('msgack',  response)
+    });
+    // setChatHistory(prevChat => [...prevChat, newMessage]);
+    // setMessage('');
 
     // Simulate reply after a short delay
     setTimeout(() => {
-      const replyMessage: ChatMessage = {
+      const replyMessage: Message = {
         id: (Date.now() + 1).toString(),
-        sender: 'friend',
-        text: `I got your message: "${message.trim()}"`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        chatId: chatId!,
+        senderId: userId,
+        content: `I got your message: "${message.trim()}"`,
       };
-      setChatHistory(prevChat => [...prevChat, replyMessage]);
+
+      console.log('replymessg',replyMessage)
     }, 1000);
   };
 
 
   // rendering individual chat message box depending on the user type
-  const renderChatItem = ({ item }: ListRenderItemInfo<ChatMessage>) => {
-  const isUser = item.sender === 'user';
+  const renderChatItem = ({ item }: ListRenderItemInfo<Message>) => {
+  const isUser  = item.senderId === otherMember?.id
 
   return (
     // This is main container with nested message box views
@@ -133,11 +144,11 @@ const ChatScreen = () => {
           isUser ? 'bg-blue-600 rounded-br-none' : 'bg-gray-600 rounded-tl-none'
         }`}
       > 
-        <Text className="text-white text-md font-sans">{item.text}</Text>
+        <Text className="text-white text-md font-sans">{item.content}</Text>
       </View> 
 
       <Text className="text-gray-400 text-xs mt-1"> 
-        {item.timestamp}
+        {item.createdAt}
       </Text>
     </View>
   );
@@ -171,7 +182,7 @@ const ChatScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <FlatList
-          data={chatHistory}
+          data={messagesFromState}
           keyExtractor={(item) => item.id}
           className="flex-1 p-4"
           renderItem={renderChatItem}
@@ -188,7 +199,7 @@ const ChatScreen = () => {
               placeholderTextColor="#A0AEC0"
               value={message}
               onChangeText={setMessage}
-              onSubmitEditing={sendMessage}
+              onSubmitEditing={() => setMessage('')}
             />
             <TouchableOpacity
               className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-500 w-14 h-10 rounded-lg items-center justify-center"
