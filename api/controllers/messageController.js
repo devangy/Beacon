@@ -9,10 +9,21 @@ export const getChatMessages = async (req,res) => {
 
     if(!chatId) return res.status(400).json({message: "Chat ID is missing", success: false})
 
+    // const member = await prisma.chat.findMany({
+    //     where : {chatId: chatId},
+    //     include: {
+    //         member: true
+    //     }
+    // })
+
+    // console.log('member:', member)
+
     const messages = await prisma.message.findMany({
         where: {chatId: chatId},
     })
 
+
+    // const m = await prisma.chat.messages
 
     console.log('messages', messages);
 
