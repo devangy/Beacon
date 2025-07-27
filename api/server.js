@@ -76,14 +76,25 @@ io.on("connection", (socket) => {
     console.log("Received message:", newMessage);
     // callback("This is ack");
 
+     // retrieving the member info the user is part of from userId and chatId
+      const member = await prisma.member.findFirst({
+        where : {
+          userId: newMessage.userId,
+          chatId: newMessage.chatId,
+        }
+      })
+
+      console.log('memberfromuserid', member)
+
       const savedMessage = await prisma.message.create({
         data: {
-          chatId: newMessage.chatId,
-          senderId: newMessage.senderId,
+          chatId: member.chatId,
+          senderId: member.id,
           content: newMessage.content,
           // createdAt: newMessage.createdAt
         },
       });
+      
 
       // Send success response with the saved message
       callback({ success: true, message: savedMessage });
