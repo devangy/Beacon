@@ -8,20 +8,20 @@ export const getUserChats = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = req.headers.authorization.split(" ")[1]; // extracting token by splitting Bearer Token into array and accesing token [1]
 
-  if (!token) return res.status(401).json({ message: "Unauthorized: No token provided" });
+  if (!token)
+    return res.status(401).json({ message: "Unauthorized: No token provided" });
 
   const payload = jwt.verify(token, process.env.JWT_SECRET);
   const userId = payload.id;
 
   console.log("userId extrct", userId);
 
-
   // all chats of the user with members details
   const chats = await prisma.chat.findMany({
     where: {
       members: {
         some: {
-          userId: userId,
+          userId: userId, // The current logged-in user's ID
         },
       },
     },
@@ -30,10 +30,11 @@ export const getUserChats = async (req, res) => {
       isGroup: true,
       members: {
         select: {
+          id: true, // Member's ID
           user: {
             select: {
               id: true,
-              username: true, // Only include specific fields
+              username: true,
               avatarUrl: true,
             },
           },
