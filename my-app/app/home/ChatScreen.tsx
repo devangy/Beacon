@@ -31,16 +31,13 @@ interface Message {
 const ChatScreen = () => {
 
   const [message, setMessage] = useState<string>('');
-  const [chatHistory, setChatHistory] = useState<Message[]>([]);
 
   const otherMember = useAppSelector((state) => state.chat.otherMember);
   const chatId = useAppSelector((state) => state.chat.selectedChatId);
   const userId = useAppSelector((state) => state.auth.userId)
 
   if (!chatId) throw new Error("Unable to get chatId from state");
-
   if (!userId) throw new Error("Unable to get chatId from state");
-
   
   const messagesFromState = useAppSelector((state) => state.message.messages.byId[chatId])
 
@@ -56,7 +53,6 @@ const ChatScreen = () => {
 
   // Initialize chat history when component mounts
   useEffect(() => {
-    // Add a welcome message from the friend
 
     (async () => {
       const response = await axios.get(`http://localhost:3000/api/messages/${chatId}`)
@@ -74,23 +70,10 @@ const ChatScreen = () => {
 
       console.log('messagefromstate',messagesFromState)
 
-      // setChatHistory(messagesFromState)
 
 
     })()
 
-
-
-
-
-    // setChatHistory([
-    //   {
-    //     id: '1',
-    //     sender: 'friend',
-    //     text: `Hey there! What's up?`,
-    //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    //   }
-    // ]);
   }, []); // Reset chat when friend changes
 
   const sendMessage = (): void => {
@@ -113,42 +96,29 @@ const ChatScreen = () => {
     socket.emit('message', newMessage, (response: string) => {
       console.log('msgack',  response)
     });
-    // setChatHistory(prevChat => [...prevChat, newMessage]);
-    // setMessage('');
-
-    // Simulate reply after a short delay
-    setTimeout(() => {
-      const replyMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        chatId: chatId!,
-        senderId: userId,
-        content: `I got your message: "${message.trim()}"`,
-      };
-
-      console.log('replymessg',replyMessage)
-    }, 1000);
+    
   };
 
 
   // rendering individual chat message box depending on the user type
   const renderChatItem = ({ item }: ListRenderItemInfo<Message>) => {
-  const isUser  = item.senderId === otherMember?.id
+  const isUser  = item.senderId === otherMember?.memberId
 
   return (
     // This is main container with nested message box views
     <View
-      className={`mb-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`} 
+      className={`mb-2 flex flex-col ${isUser ? 'items-start' : ' items-end'}`} 
     >  
       <View // This is message box rendered based on user or the other chat member type based styling
         className={`flex  items-center justify-center rounded-lg px-4 py-2 max-w-[65%] ${
-          isUser ? 'bg-blue-600 rounded-br-none' : 'bg-gray-600 rounded-tl-none'
+          isUser ? 'bg-blue-700 rounded-bl-none' : 'bg-stone-600 rounded-tr-none'
         }`}
       > 
         <Text className="text-white text-md font-sans">{item.content}</Text>
       </View> 
 
       <Text className="text-gray-400 text-xs mt-1"> 
-        {item.createdAt}
+        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </Text>
     </View>
   );
@@ -171,7 +141,7 @@ const ChatScreen = () => {
           source={{ uri: otherMember?.avatarUrl }}
           className="w-9 h-9 rounded-full ml-2"
         />
-        <Text className=" text-lg  text-gray-200 ml-4 font-sans">
+        <Text className="text-lg  text- ml-4 font-sans mt-1 text-slate-200">
           {otherMember?.name}
         </Text>
       </View>

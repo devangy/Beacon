@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Chat } from "@/types/chat";
-import { User } from "@/types/user";
+import { Chat, Member } from "@/types/chat";
 
 // initial chat state here where im normalize state shape by grouping them together with byId and allIds
 //refer to  https://redux.js.org/usage/structuring-reducers/normalizing-state-shape => #Relationships and Tables
@@ -10,7 +9,7 @@ interface chatState  {
     allIds: string[]
   }
   selectedChatId: string | null;
-  otherMember: User | null
+  otherMember: Member | null
 };
 
 
@@ -40,7 +39,7 @@ const chatslice = createSlice({
       state.selectedChatId = action.payload;
     },
 
-    setOtherMember: (state, action: PayloadAction<User>) => {
+    setOtherMember: (state, action: PayloadAction<Member>) => {
       state.otherMember = action.payload;
     },
   },

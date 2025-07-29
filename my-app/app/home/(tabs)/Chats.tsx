@@ -72,8 +72,13 @@ export default function Chats() {
   const members = useMemo(() => {
     return chats?.map(chat => {
       const otherMember = chat.members.find(m => m.user.id !== userId);
+
+      console.log('otherMember', otherMember)
+
       return {
-        id: chat.id,
+        chatId: chat.id,
+        memberId: otherMember?.id,
+        userId: otherMember?.user.id,
         name: otherMember?.user?.username ?? "Unknown",
         avatarUrl: otherMember?.user?.avatarUrl ?? "",
       };
@@ -82,13 +87,12 @@ export default function Chats() {
 
 
 
-  console.log("chats data:", members);
+  console.log("members data:", members);
 
   const chatWithUser = members?.[0]
 
+  console.log('chatWithUser',chatWithUser)
 
-  // console.log('memberNames', allUserNames)
-  // console.log('fetched chats', fetchedChats);
 
 
   console.log("Chats data:", chats);
@@ -108,9 +112,9 @@ export default function Chats() {
       <FlatList
         data={members}
         showsVerticalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.chatId}
         renderItem={({ item }) => (
-          <Pressable onPress={() => handleStartChat(item.id)}>
+          <Pressable onPress={() => handleStartChat(item.chatId)}>
             <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
               {/* Avatar Container with Status Indicator */}
               <View className="relative mr-3">
@@ -118,15 +122,15 @@ export default function Chats() {
                   source={{ uri: item.avatarUrl }}
                   className="w-10 h-10 rounded-full"
                 />
-                {/* Status Indicator */}
+                {/* Status Indicator
                 <View
                   className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${getStatusColor(item.status)}`}
-                />
+                /> */}
               </View>
 
               <View>
                 <Text className="text-white text-lg">{item.name}</Text>
-                <Text className="text-gray-400 text-sm">{item.status}</Text>
+                {/* <Text className="text-gray-400 text-sm">{item.status}</Text> */}
               </View>
             </View>
           </Pressable>
