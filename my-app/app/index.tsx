@@ -1,229 +1,234 @@
-import { View, Text, TouchableOpacity, Image, Animated, Platform } from "react-native";
-import Svg from '../components/SvgComponent';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    Image,
+    Animated,
+    Platform,
+} from "react-native";
+import Svg from "../components/SvgComponent";
 import { useNavigation } from "expo-router";
-import { socket } from '../socket'
+import { socket } from "../socket";
 import { useEffect, useState } from "react";
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
-import { useRef } from 'react';
-import axios from 'axios'
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+import { useRef } from "react";
+import axios from "axios";
 import { useRouter } from "expo-router";
 import { ApiResponse } from "@/types/api-response";
 import { useAppDispatch } from "../hooks/hooks";
 import { authUser } from "@/types/authUser";
 import { setAuthUser } from "@/slices/authSlice";
 import { setToken, getToken } from "@/hooks/authToken";
-import { Dimensions } from 'react-native';
-
-
-
+import { Dimensions } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Endpoint for github oauth 
+// Endpoint for github oauth
 const discovery = {
-  authorizationEndpoint: 'https://github.com/login/oauth/authorize',
-  tokenEndpoint: 'https://github.com/login/oauth/access_token',
+    authorizationEndpoint: "https://github.com/login/oauth/authorize",
+    tokenEndpoint: "https://github.com/login/oauth/access_token",
 };
 
-export default function Index () {
-  const dispatch = useAppDispatch();
-  const router = useRouter();
+export default function Index() {
+    const dispatch = useAppDispatch();
+    const router = useRouter();
 
+    const [isConnected, setIsConnected] = useState(false);
+    const [transport, setTransport] = useState("N/A");
 
-  const [isConnected, setIsConnected] = useState(false);
-  const [transport, setTransport] = useState('N/A');
+    // useEffect(() => {
 
+    //   if (socket.connected) {
+    //     onConnect();
+    //   }
 
-  // useEffect(() => {
+    //   socket.emit('message', 'hello nerdd');
 
-  //   if (socket.connected) {
-  //     onConnect();
-  //   }
+    //   function onConnect() {
+    //     setIsConnected(true);
+    //     setTransport(socket.io.engine.transport.name);
 
-  //   socket.emit('message', 'hello nerdd');
+    //     socket.emit('message', 'hello nerdd');
 
+    //     socket.io.engine.on('upgrade', (transport) => {
+    //       setTransport(transport.name);
+    //       console.log('transport:', transport.name);
+    //     });
+    //   }
 
-  //   function onConnect() {
-  //     setIsConnected(true);
-  //     setTransport(socket.io.engine.transport.name);
+    //   function onDisconnect() {
+    //     setIsConnected(false);
+    //     setTransport('N/A');
+    //   }
 
-  //     socket.emit('message', 'hello nerdd');
+    //   socket.on('connect', onConnect);
+    //   socket.on('disconnect', onDisconnect);
 
-  //     socket.io.engine.on('upgrade', (transport) => {
-  //       setTransport(transport.name);
-  //       console.log('transport:', transport.name);
-  //     });
-  //   }
+    //   return () => {
+    //     socket.off('connect', onConnect);
+    //     socket.off('disconnect', onDisconnect);
+    //   };
+    // }, []);
 
-  //   function onDisconnect() {
-  //     setIsConnected(false);
-  //     setTransport('N/A');
-  //   }
+    //
 
-  //   socket.on('connect', onConnect);
-  //   socket.on('disconnect', onDisconnect);
+    const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  //   return () => {
-  //     socket.off('connect', onConnect);
-  //     socket.off('disconnect', onDisconnect);
-  //   };
-  // }, []);
-
-  //
-
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.70,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const [request, response, promptAsync] = useAuthRequest(
-    
-    {
-      clientId: process.env.EXPO_PUBLIC_GHUB_CID || 'add',
-      scopes: ['read:user', 'user:email'],
-      redirectUri: Platform.select({
-        web: 'http://localhost:8081', // For web browser
-        default: makeRedirectUri({     // For mobile
-          scheme: 'myapp',
-          path: 'oauth'
-        }),
-      }),
-      usePKCE: true,
-    },
-    discovery,
-  );
-
-
-
-
-  useEffect(() => {
-    const handleOAuth = async () => {
-      if (response?.type === 'success') {
-        const { code } = response.params;
-        console.log('Auth code:', code);
-
-        try {
-          const res = await axios<ApiResponse<authUser>>({
-            method: 'post',
-            url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
-            data: { 
-              code,
-              code_verifier: request?.codeVerifier,
-            },
-          });
-
-          console.log('Login successful:', res.data);
-
-          const accessToken = res.data.data.accessToken;
-          const refreshToken = res.data.data.refreshToken;
-          const userId = res.data.data.userId; 
-
-
-          console.log('Token received:', accessToken);
-          console.log('Refresh Token:', refreshToken);
-          console.log('User ID:', userId);
-
-  
-
-        //   if (refreshToken) {
-        //     setToken(refreshToken);
-        //   } else {
-        //     console.error('No refresh token received');
-        //     throw new Error('No refresh token received');
-        //   }
-
-        //   const refreshTokenExpoStore = await getToken()
-
-        //  console.log('Refresh Token from Expo Secure Store:', refreshTokenExpoStore);
-
-          
-
-          // Dispatch using the accessToken and decoded userId
-          dispatch(setAuthUser({ accessToken: accessToken, userId: userId }));
-
-          router.push('/home/Friends');
-        } catch (error: any) {
-          console.error('Error logging in:', error);
-          response.error = error.message || 'An error occurred during login';
-        }
-      }
+    const handlePressIn = () => {
+        Animated.spring(scaleAnim, {
+            toValue: 0.7,
+            useNativeDriver: true,
+        }).start();
     };
 
-    handleOAuth();
-  }, [response]);
+    const handlePressOut = () => {
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 3,
+            useNativeDriver: true,
+        }).start();
+    };
 
+    const redirectUri = makeRedirectUri({
+        scheme: 'myapp',
+    });
 
-  const { width } = Dimensions.get('window');
-  const svgSize = width * 0.2; // 20% of screen width
+    const [request, response, promptAsync] = useAuthRequest(
+        {
+            clientId: process.env.EXPO_PUBLIC_GHUB_CID || "add",
+            scopes: ["read:user", "user:email"],
+            redirectUri: Platform.select({
+                web: "http://localhost:8081", // For web browser
+                default: makeRedirectUri({
+                    // For mobile
+                    scheme: "myapp",
+                    path: "oauth",
+                }),
+            }),
+            usePKCE: true,
+        },
+        discovery,
+    );
 
-  return (
-    <View
-      className="flex-1 flex-col border-1 border-red-400 bg-[#101820] items-center"
-    >
-      <View className="flex flex-row w-full items-center justify-center mt-60 gap-10">
-        {/* Wrapped Image inside a View */}
-        <View className="flex h-20 w-20 p-4 bg-green-300 rounded-xl justify-center items-center">
-          <Svg height={92} width={92} className="lg:h-96" />
+    useEffect(() => {
+        const handleOAuth = async () => {
+            if (response?.type === "success") {
+                const { code } = response.params;
+                console.log("Auth code:", code);
+
+                try {
+                    const res = await axios<ApiResponse<authUser>>({
+                        method: "post",
+                        url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
+                        data: {
+                            code,
+                            code_verifier: request?.codeVerifier,
+                        },
+                    });
+
+                    console.log("Login successful:", res.data);
+
+                    const accessToken = res.data.data.accessToken;
+                    const refreshToken = res.data.data.refreshToken;
+                    const userId = res.data.data.userId;
+
+                    console.log("Token received:", accessToken);
+                    console.log("Refresh Token:", refreshToken);
+                    console.log("User ID:", userId);
+
+                    //   if (refreshToken) {
+                    //     setToken(refreshToken);
+                    //   } else {
+                    //     console.error('No refresh token received');
+                    //     throw new Error('No refresh token received');
+                    //   }
+
+                    //   const refreshTokenExpoStore = await getToken()
+
+                    //  console.log('Refresh Token from Expo Secure Store:', refreshTokenExpoStore);
+
+                    // Dispatch using the accessToken and decoded userId
+                    dispatch(
+                        setAuthUser({
+                            accessToken: accessToken,
+                            userId: userId,
+                        }),
+                    );
+
+                    router.push("/home/Friends");
+                } catch (error: any) {
+                    console.error("Error logging in:", error);
+                    response.error =
+                        error.message || "An error occurred during login";
+                }
+            }
+        };
+
+        handleOAuth();
+    }, [response]);
+
+    const { width } = Dimensions.get("window");
+    const svgSize = width * 0.2; // 20% of screen width
+
+    return (
+        <View className="flex-1 flex-col border-1 border-red-400 bg-[#101820] items-center">
+            <View className="flex flex-row w-full items-center justify-center mt-60 gap-10">
+                {/* Wrapped Image inside a View */}
+                <View className="flex h-20 w-20 p-4 bg-green-300 rounded-xl justify-center items-center">
+                    <Svg height={92} width={92} className="lg:h-96" />
+                </View>
+                <Text className="flex text-7xl font-light  mt-4 text-white subpixel-antialiased">
+                    Beacon
+                </Text>
+            </View>
+
+            <View className="flex border-2 border-red-500 h-20 w-full justify-center items-center mt-80">
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                    <TouchableOpacity
+                        onPress={() => promptAsync()}
+                        onPressIn={handlePressIn}
+                        onPressOut={handlePressOut}
+                        activeOpacity={0.8}
+                        style={{
+                            backgroundColor: "#24292e",
+                            paddingVertical: 14,
+                            paddingHorizontal: 20,
+                            borderRadius: 12,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 3 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 5,
+                            elevation: 5,
+                        }}
+                    >
+                        <Image
+                            source={{
+                                uri: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                            }}
+                            style={{
+                                width: 28,
+                                height: 28,
+                                marginRight: 12,
+                                borderRadius: 10,
+                            }}
+                        />
+                        <Text
+                            style={{
+                                color: "#ffffff",
+                                fontSize: 18,
+                                fontWeight: "600",
+                                fontFamily: "GeistMono",
+                            }}
+                        >
+                            Sign in with GitHub
+                        </Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
         </View>
-        <Text className="flex text-7xl font-light  mt-4 text-white subpixel-antialiased">
-          Beacon
-        </Text>
-      </View>
-
-      <View className="flex border-2 border-red-500 h-20 w-full justify-center items-center mt-80">
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <TouchableOpacity
-            onPress={() => promptAsync()}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            activeOpacity={0.8}
-            style={{
-              backgroundColor: '#24292e',
-              paddingVertical: 14,
-              paddingHorizontal: 20,
-              borderRadius: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 3 },
-              shadowOpacity: 0.2,
-              shadowRadius: 5,
-              elevation: 5,
-            }}
-          >
-            <Image
-              source={{
-                uri: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
-              }}
-              style={{ width: 28, height: 28, marginRight: 12, borderRadius: 10, }}
-            />
-            <Text
-              style={{
-                color: '#ffffff',
-                fontSize: 18,
-                fontWeight: '600',
-                fontFamily: 'GeistMono',
-              }}
-            >
-              Sign in with GitHub
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
-    </View >
-  );
+    );
 }

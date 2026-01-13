@@ -23,23 +23,23 @@ const { multistream } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3082;
 
 //  check if folder or create
 if (!fs.existsSync("logs")) {
-  fs.mkdirSync("logs");
+    fs.mkdirSync("logs");
 }
 
 // creating a write stream for logs
 const logStream = fs.createWriteStream(
-  path.join(__dirname, "logs", "access.log"),
-  { flags: "a" }
+    path.join(__dirname, "logs", "access.log"),
+    { flags: "a" },
 );
 
 // Streams:  Console + File Stream
 const streams = [
-  { stream: pinoPretty({ colorize: true }) }, // Console
-  { stream: logStream }, // File
+    { stream: pinoPretty({ colorize: true }) }, // Console
+    { stream: logStream }, // File
 ];
 
 const logger = pino({}, multistream(streams));
@@ -47,7 +47,7 @@ const logger = pino({}, multistream(streams));
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" },
+    cors: { origin: "*" },
 });
 
 // middlewares
@@ -61,7 +61,7 @@ app.use(pinoHttp({ logger }));
 
 // Test Route
 app.use("/test", (req, res) => {
-  res.json({ message: "Test route working!" });
+    res.json({ message: "Test route working!" });
 });
 
 app.use("/api/auth", authRouter);
@@ -70,47 +70,44 @@ app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
 
 io.on("connection", (socket) => {
-  console.log("a user connected", socket.id);
+    console.log("a user connected", socket.id);
 
-  socket.on("message", async (newMessage, callback) => {
-    console.log("Received message:", newMessage);
-    // callback("This is ack");
+    socket.on("message", async (newMessage, callback) => {
+        console.log("Received message:", newMessage);
+        // callback("This is ack");
 
-     // retrieving the member info the user is part of from userId and chatId
-      const member = await prisma.member.findFirst({
-        where : {
-          userId: newMessage.userId,
-          chatId: newMessage.chatId,
-        }
-      })
+        // retrieving the member info the user is part of from userId and chatId
+        const member = await prisma.member.findFirst({
+            where: {
+                userId: newMessage.userId,
+                chatId: newMessage.chatId,
+            },
+        });
 
-      console.log('memberfromuserid', member)
+        console.log("memberfromuserid", member);
 
-      const savedMessage = await prisma.message.create({
-        data: {
-          chatId: member.chatId,
-          senderId: member.id,
-          content: newMessage.content,
-          // createdAt: newMessage.createdAt
-        },
-      });
-      
+        const savedMessage = await prisma.message.create({
+            data: {
+                chatId: member.chatId,
+                senderId: member.id,
+                content: newMessage.content,
+                // createdAt: newMessage.createdAt
+            },
+        });
 
-      // Send success response with the saved message
-      callback({ success: true, message: savedMessage });
-      console.log("saved message", savedMessage);
-
-
-  });
+        // Send success response with the saved message
+        callback({ success: true, message: savedMessage });
+        console.log("saved message", savedMessage);
+    });
 });
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send("Something broke!");
+    console.error(err.stack);
+    res.status(500).send("Something broke!");
 });
 
 // Start Server
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

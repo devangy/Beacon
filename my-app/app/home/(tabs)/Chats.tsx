@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Image, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, Pressable, ActivityIndicator } from "react-native";
 import ChatScreen from "@/app/home/ChatScreen";
 import { MessageSquarePlus } from 'lucide-react-native';
 import { useRouter } from "expo-router";
@@ -9,35 +9,8 @@ import { useMemo } from "react";
 import { setChatId, setOtherMember } from "@/slices/chatSlice";
 
 
-// Mock friends data without hardcoded avatar URLs
-const mockFriends = [
-  { id: '1', name: 'Aarav Mehta', status: 'Online' },
-  { id: '2', name: 'Riya Sharma', status: 'Offline' },
-  { id: '3', name: 'Kabir Verma', status: 'Online' },
-  { id: '4', name: 'Isha Patel', status: 'Away' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-  { id: '5', name: 'Arjun Singh', status: 'Offline' },
-];
 
-
-
-// func to get avatar url
-const getAvatarUrl = (name: string) => {
-  const formattedName = encodeURIComponent(name);
-  return `https://ui-avatars.com/api/?name=${formattedName}&background=random&color=fff&size=128`;
-};
-
-// Helper for status color
+// user status color
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Online': return 'bg-green-500';
@@ -65,6 +38,14 @@ export default function Chats() {
 
   const { data: chats, isLoading } = useGetUserChats(userId, token);
 
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   // const memberNames = chats?.flatMap(chat =>
   //   chat.members.map(member => member.name)
   // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array
@@ -91,7 +72,15 @@ export default function Chats() {
 
   const chatWithUser = members?.[0]
 
-  console.log('chatWithUser',chatWithUser)
+
+  if (!chatWithUser) {
+    console.error('Invalid member data');
+    return;
+  }
+
+
+
+  console.log('chatWithUser', chatWithUser)
 
 
 
@@ -102,7 +91,8 @@ export default function Chats() {
     console.log("Start new chat", chatId);
 
 
-    dispatch(setChatId(chatId));       
+
+    dispatch(setChatId(chatId));
     dispatch(setOtherMember(chatWithUser));
     router.push("/home/ChatScreen");
   };
@@ -112,9 +102,9 @@ export default function Chats() {
       <FlatList
         data={members}
         showsVerticalScrollIndicator={false}
-        keyExtractor={(item) => item.chatId}
+        keyExtractor={(item) => item.chatId!}
         renderItem={({ item }) => (
-          <Pressable onPress={() => handleStartChat(item.chatId)}>
+          <Pressable onPress={() => handleStartChat(item.chatId!)}>
             <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
               {/* Avatar Container with Status Indicator */}
               <View className="relative mr-3">

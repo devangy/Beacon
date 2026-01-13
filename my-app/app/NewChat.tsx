@@ -36,7 +36,7 @@ export default function NewChat() {
         friendId: friend.id
       })
 
-      if (res?.status=="success") {
+      if (res?.status==20) {
 
       }
 

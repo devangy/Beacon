@@ -28,7 +28,32 @@ interface Message {
 }
 
 
+
 const ChatScreen = () => {
+
+   useEffect(() => {
+
+    (async () => {
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BASE_URL}/api/messages/${chatId}`)
+      console.log('messages', response.data)
+
+      const messages = response.data.data
+
+      // const newmessages = messages.byId[chatId].data
+
+      // console.log(new)
+
+      if (!chatId) return 
+
+      dispatch(setMessagesByChatId({ chatId, messages }));
+
+      console.log('messagefromstate',messagesFromState)
+
+
+
+    })()
+
+  }, []); // Reset chat when friend changes
 
   const [message, setMessage] = useState<string>('');
 
@@ -55,7 +80,7 @@ const ChatScreen = () => {
   useEffect(() => {
 
     (async () => {
-      const response = await axios.get(`http://localhost:3000/api/messages/${chatId}`)
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BASE_URL}/api/messages/${chatId}`)
       console.log('messages', response.data)
 
       const messages = response.data.data
