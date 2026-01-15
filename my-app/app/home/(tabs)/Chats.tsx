@@ -1,6 +1,14 @@
-import { View, Text, FlatList, Image, TouchableOpacity, Pressable, ActivityIndicator } from "react-native";
+import {
+    View,
+    Text,
+    FlatList,
+    Image,
+    TouchableOpacity,
+    Pressable,
+    ActivityIndicator,
+} from "react-native";
 import ChatScreen from "@/app/home/ChatScreen";
-import { MessageSquarePlus } from 'lucide-react-native';
+import { MessageSquarePlus } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useGetUserChats } from "@/hooks/getUserChats";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
@@ -8,132 +16,130 @@ import { Chat, Member } from "@/types/chat";
 import { useMemo } from "react";
 import { setChatId, setOtherMember } from "@/slices/chatSlice";
 
-
-
 // user status color
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Online': return 'bg-green-500';
-    case 'Away': return 'bg-yellow-500';
-    case 'Offline': return 'bg-gray-500';
-    default: return 'bg-gray-500';
-  }
+    switch (status) {
+        case "Online":
+            return "bg-green-500";
+        case "Away":
+            return "bg-yellow-500";
+        case "Offline":
+            return "bg-gray-500";
+        default:
+            return "bg-gray-500";
+    }
 };
 
 export default function Chats() {
+    const userId = useAppSelector((state) => state.auth.userId);
+    const token = useAppSelector((state) => state.auth.accessToken);
 
-  const userId = useAppSelector((state) => state.auth.userId);
-  const token = useAppSelector((state) => state.auth.accessToken);
+    if (!userId) throw new Error("User ID is not available");
 
+    if (!token) throw new Error("Access token is not available");
 
-  if (!userId) throw new Error("User ID is not available")
+    const dispatch = useAppDispatch();
 
-  if (!token) throw new Error("Access token is not available");
+    console.log("User ID:", userId);
+    console.log("Token:", token);
 
-  const dispatch = useAppDispatch();
+    const { data: chats, isLoading } = useGetUserChats(userId, token);
 
-  console.log("User ID:", userId);
-  console.log("Token:", token);
+    const members = useMemo(() => {
+        return chats?.map((chat) => {
+            const otherMember = chat.members.find((m) => m.user.id !== userId);
 
+            console.log("otherMember", otherMember);
 
-  const { data: chats, isLoading } = useGetUserChats(userId, token);
+            return {
+                chatId: chat.id,
+                memberId: otherMember?.id,
+                userId: otherMember?.user.id,
+                name: otherMember?.user?.username ?? "Unknown",
+                avatarUrl: otherMember?.user?.avatarUrl ?? "",
+            };
+        });
+    }, [chats, userId]);
 
-  if (isLoading) {
+    if (isLoading) {
+        return (
+            <View
+                style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                }}
+            >
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    // const memberNames = chats?.flatMap(chat =>
+    //   chat.members.map(member => member.name)
+    // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array
+
+    console.log("members data:", members);
+
+    const chatWithUser = members?.[0];
+
+    if (!chatWithUser) {
+        console.error("Invalid member data");
+        return;
+    }
+
+    console.log("chatWithUser", chatWithUser);
+
+    console.log("Chats data:", chats);
+
+    const router = useRouter();
+    const handleStartChat = (chatId: string) => {
+        console.log("Start new chat", chatId);
+
+        dispatch(setChatId(chatId));
+        dispatch(setOtherMember(chatWithUser));
+        router.push("/home/ChatScreen");
+    };
+
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  // const memberNames = chats?.flatMap(chat =>
-  //   chat.members.map(member => member.name)
-  // chats for each chat object in the chats array we will iterate over each chat object and push it into chatMemberNames array
-
-  const members = useMemo(() => {
-    return chats?.map(chat => {
-      const otherMember = chat.members.find(m => m.user.id !== userId);
-
-      console.log('otherMember', otherMember)
-
-      return {
-        chatId: chat.id,
-        memberId: otherMember?.id,
-        userId: otherMember?.user.id,
-        name: otherMember?.user?.username ?? "Unknown",
-        avatarUrl: otherMember?.user?.avatarUrl ?? "",
-      };
-    });
-  }, [chats, userId]);
-
-
-
-  console.log("members data:", members);
-
-  const chatWithUser = members?.[0]
-
-
-  if (!chatWithUser) {
-    console.error('Invalid member data');
-    return;
-  }
-
-
-
-  console.log('chatWithUser', chatWithUser)
-
-
-
-  console.log("Chats data:", chats);
-
-  const router = useRouter();
-  const handleStartChat = (chatId: string) => {
-    console.log("Start new chat", chatId);
-
-
-
-    dispatch(setChatId(chatId));
-    dispatch(setOtherMember(chatWithUser));
-    router.push("/home/ChatScreen");
-  };
-
-  return (
-    <View className="flex-1 bg-black p-4">
-      <FlatList
-        data={members}
-        showsVerticalScrollIndicator={false}
-        keyExtractor={(item) => item.chatId!}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => handleStartChat(item.chatId!)}>
-            <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
-              {/* Avatar Container with Status Indicator */}
-              <View className="relative mr-3">
-                <Image
-                  source={{ uri: item.avatarUrl }}
-                  className="w-10 h-10 rounded-full"
-                />
-                {/* Status Indicator
+        <View className="flex-1 bg-black p-4">
+            <FlatList
+                data={members}
+                showsVerticalScrollIndicator={false}
+                keyExtractor={(item) => item.chatId!}
+                renderItem={({ item }) => (
+                    <Pressable onPress={() => handleStartChat(item.chatId!)}>
+                        <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
+                            {/* Avatar Container with Status Indicator */}
+                            <View className="relative mr-3">
+                                <Image
+                                    source={{ uri: item.avatarUrl }}
+                                    className="w-10 h-10 rounded-full"
+                                />
+                                {/* Status Indicator
                 <View
                   className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${getStatusColor(item.status)}`}
                 /> */}
-              </View>
+                            </View>
 
-              <View>
-                <Text className="text-white text-lg">{item.name}</Text>
-                {/* <Text className="text-gray-400 text-sm">{item.status}</Text> */}
-              </View>
-            </View>
-          </Pressable>
-        )}
-      />
+                            <View>
+                                <Text className="text-white text-lg">
+                                    {item.name}
+                                </Text>
+                                {/* <Text className="text-gray-400 text-sm">{item.status}</Text> */}
+                            </View>
+                        </View>
+                    </Pressable>
+                )}
+            />
 
-      {/* Floating New Chat Button */}
-      <TouchableOpacity
-        className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
-        onPress={() => handleStartChat}
-      >
-        <MessageSquarePlus size={24} color="#93FC00" />
-      </TouchableOpacity>
-    </View>
-  );
+            {/* Floating New Chat Button */}
+            <TouchableOpacity
+                className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
+                onPress={() => handleStartChat}
+            >
+                <MessageSquarePlus size={24} color="#93FC00" />
+            </TouchableOpacity>
+        </View>
+    );
 }
