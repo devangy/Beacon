@@ -23,6 +23,7 @@
     "@types/react-dom": "~19.1.7",
     "axios": "^1.9.0",
     "expo": "^54.0.31",
+    "expo-audio": "~1.1.1",
     "expo-auth-session": "~7.0.10",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",

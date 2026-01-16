@@ -19,6 +19,8 @@ import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { addNewMessage, setMessagesByChatId } from "@/slices/messageSlice";
 import { Message } from "@/types/message";
 
+import { useAudioPlayer } from "expo-audio";
+
 // interface Message {
 //     id: string;
 //     chatId: string;
@@ -55,8 +57,8 @@ const ChatScreen = () => {
     const chatId = useAppSelector((state) => state.chat.selectedChatId);
     const userId = useAppSelector((state) => state.auth.userId);
 
-    if (!chatId) throw new Error("Unable to get chatId from state");
-    if (!userId) throw new Error("Unable to get chatId from state");
+    if (!chatId) throw new Error("Unable to get chat-Id from state");
+    if (!userId) throw new Error("Unable to get user-Id from state");
 
     const messagesFromState = useAppSelector(
         (state) => state.message.messages.byId[chatId],
@@ -66,6 +68,8 @@ const ChatScreen = () => {
     //
     const inputRef = useRef<TextInput>(null);
 
+    const player = useAudioPlayer(require("../../assets/sounds/sent.mp3"));
+
     console.log("otherMember", otherMember);
     console.log("chatID", chatId);
 
@@ -73,25 +77,6 @@ const ChatScreen = () => {
 
     // Initialize chat history when component mounts
     useEffect(() => {
-        (async () => {
-            const response = await axios.get(
-                `${process.env.EXPO_PUBLIC_BASE_URL}/api/messages/${chatId}`,
-            );
-            console.log("messages", response.data);
-
-            const messages = response.data.data;
-
-            // const newmessages = messages.byId[chatId].data
-
-            // console.log(new)
-
-            if (!chatId) return;
-
-            dispatch(setMessagesByChatId({ chatId, messages }));
-
-            console.log("messagefromstate", messagesFromState);
-        })();
-
         if (Platform.OS !== "web") return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,6 +99,9 @@ const ChatScreen = () => {
     const sendMessage = (): void => {
         if (message.trim() === "") return; // if the message is empty simply return dont send it
         // socket.emit('message', 'gaynigger');
+        player.seekTo(0);
+        player.play();
+        player.release();
 
         // create temp ID for msg
         const tempId = Date.now().toString();
@@ -148,7 +136,9 @@ const ChatScreen = () => {
 
     // rendering individual chat message box depending on the user type
     const renderChatItem = ({ item }: ListRenderItemInfo<Message>) => {
-        const isUser = item.senderId === otherMember?.memberId;
+        const isUser = item.senderId === userId;
+
+        console.log("renderChatItem: ", item);
 
         return (
             // This is main container with nested message box views
@@ -177,13 +167,13 @@ const ChatScreen = () => {
         );
     };
 
-    const handleKeyPress = (e: any) => {
-        // Check if the 'Enter' key was pressed without the 'Shift' key
-        if (e.nativeEvent.key === "Enter" && !e.nativeEvent.shiftKey) {
-            e.preventDefault(); // Prevents a new line from being added
-            sendMessage();
-        }
-    };
+    // const handleKeyPress = (e: any) => {
+    //     // Check if the 'Enter' key was pressed without the 'Shift' key
+    //     if (e.nativeEvent.key === "Enter" && !e.nativeEvent.shiftKey) {
+    //         e.preventDefault(); // Prevents a new line from being added
+    //         sendMessage();
+    //     }
+    // };
 
     return (
         <View className="flex-1 bg-black">
