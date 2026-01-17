@@ -72,6 +72,7 @@ app.use("/api/messages", messageRouter);
 io.on("connection", (socket) => {
     console.log("a user connected", socket.id);
 
+    socket.on("key-exchange", async (callback) => {});
     socket.on("message", async (newMessage, callback) => {
         console.log("Received message:", newMessage);
         // callback("This is ack");
@@ -89,7 +90,7 @@ io.on("connection", (socket) => {
         const savedMessage = await prisma.message.create({
             data: {
                 chatId: member.chatId,
-                senderId: member.id,
+                senderId: member.userId,
                 content: newMessage.content,
                 // createdAt: newMessage.createdAt
             },
