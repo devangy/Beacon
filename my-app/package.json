@@ -39,6 +39,7 @@
     "expo-web-browser": "~15.0.10",
     "jwt-decode": "^4.0.0",
     "lucide-react-native": "^0.474.0",
+    "mlkem": "^2.5.0",
     "nativewind": "^4.1.23",
     "react": "19.1.0",
     "react-dom": "19.1.0",

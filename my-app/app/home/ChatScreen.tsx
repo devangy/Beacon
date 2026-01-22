@@ -14,12 +14,16 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SendHorizontal } from "lucide-react-native";
 
 import { socket } from "../../socket";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { addNewMessage, setMessagesByChatId } from "@/slices/messageSlice";
 import { Message } from "@/types/message";
-
 import { useAudioPlayer } from "expo-audio";
+import { MlKem512 } from "mlkem";
+import * as secureStore from "expo-secure-store";
+import { ApiResponse } from "@/types/api-response";
+import { User, PublicKey } from "@/types/user";
+import api from "@/utils/axios-Intercept";
 
 // interface Message {
 //     id: string;
@@ -49,6 +53,47 @@ const ChatScreen = () => {
 
             console.log("messagefromstate", messagesFromState);
         })();
+
+        const startSession = async (): Promise<void> => {
+            //generate a key pair
+            const kyber = new MlKem512();
+
+            const [pub_key, priv_k] = await kyber.generateKeyPair();
+
+            const str_pk = Buffer.from(priv_k).toString();
+            console.log("str_pk", str_pk);
+
+            // sending the pub key to the server
+            socket.emit("pub_key", pub_key);
+            console.log("public_key", pub_key);
+
+            //
+            secureStore.setItemAsync("priv_k", str_pk);
+
+            // make call to get the public key
+            async function sendPublicKeys() {
+                try {
+                    const res = await axios.post(
+                        `${process.env.EXPO_PUBLIC_BASE_URL}/api/keys`,
+                        { publicKey: pub_key },
+                    );
+
+                    console.log("sendPublicKeys: ", res.statusText);
+                } catch (err) {
+                    console.error(
+                        "err getting public keys of other user: ",
+                        err,
+                    );
+                    throw err;
+                }
+            }
+
+            sendPublicKeys();
+
+            socket.emit("key-exchange", (callback: CallableFunction) => {});
+        };
+
+        startSession();
     }, []); // Reset chat when friend changes
 
     const [message, setMessage] = useState<string>("");
