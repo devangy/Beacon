@@ -46,7 +46,7 @@ const logger = pino({}, multistream(streams));
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
+export const io = new Server(server, {
     cors: { origin: "*" },
 });
 
@@ -69,10 +69,28 @@ app.use("/api/chats", chatRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
 
+app.use("/api/keys", async (req, res) => {
+    const { userId } = req.body;
+    const user = await prisma.user.findUnique({
+        where: {
+            userId: userId,
+        },
+        select: {
+            publicKeys: true,
+        },
+    });
+    console.log("user keys: ", user);
+
+    return res.status(200).json({
+        success: true,
+        message: "user public keys",
+        data: user,
+    });
+});
+
 io.on("connection", (socket) => {
     console.log("a user connected", socket.id);
-
-    socket.on("key-exchange", async (callback) => {});
+    socket.socket.on("key-exchange", async (callback) => {});
     socket.on("message", async (newMessage, callback) => {
         console.log("Received message:", newMessage);
         // callback("This is ack");

@@ -22,6 +22,16 @@ model User {
   createdAt DateTime      @default(now())
   friends   Friend[]  @relation("UserFriends")
   addedBy   Friend[]  @relation("FriendsUsers")
+  publicKeys PublicKey[]
+}
+
+model PublicKey {
+    id      String @default(uuid())
+    userId  String @unique
+     user      User     @relation(fields: [userId], references: [id])
+    key     String @unique
+    isActive    Boolean
+    createdAt   DateTime
 }
 
 model Friend {
