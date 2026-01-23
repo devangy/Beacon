@@ -5,76 +5,78 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String        @id @default(uuid())
-  githubId  Int           @unique
-  username  String
-  avatarUrl String
-  chats     Member[]  // Through join table
-  createdAt DateTime      @default(now())
-  friends   Friend[]  @relation("UserFriends")
-  addedBy   Friend[]  @relation("FriendsUsers")
-  publicKeys PublicKey[]
+    id         String      @id @default(uuid())
+    githubId   Int         @unique
+    username   String
+    avatarUrl  String
+    chats      Member[] // Through join table
+    createdAt  DateTime    @default(now())
+    friends    Friend[]    @relation("UserFriends")
+    addedBy    Friend[]    @relation("FriendsUsers")
+    publicKeys PublicKey[]
 }
 
 model PublicKey {
-    id      String @default(uuid())
-    userId  String @unique
-     user      User     @relation(fields: [userId], references: [id])
-    key     String @unique
-    isActive    Boolean
-    createdAt   DateTime
+    id        String   @default(uuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id])
+    key       Bytes
+    isUsed    Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    @@unique([id])
 }
 
 model Friend {
-  id        String   @id @default(uuid())
-  user      User     @relation("UserFriends", fields: [userId], references: [id])
-  friend    User     @relation("FriendsUsers", fields: [friendId], references: [id])
-  friendId  String
-  userId    String
-  status    String   // pending, accepted, blocked
-  createdAt DateTime @default(now())
+    id        String   @id @default(uuid())
+    user      User     @relation("UserFriends", fields: [userId], references: [id])
+    friend    User     @relation("FriendsUsers", fields: [friendId], references: [id])
+    friendId  String
+    userId    String
+    status    String // pending, accepted, blocked
+    createdAt DateTime @default(now())
 
-  @@unique([userId, friendId])
+    @@unique([userId, friendId])
 }
 
 model Chat {
-  id           String        @id @default(uuid())
-  name         String?       // group name
-  isGroup      Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  messages     Message[]
-  members      Member[]  // many-to-many via ChatMember
+    id        String    @id @default(uuid())
+    name      String? // group name
+    isGroup   Boolean   @default(false)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    messages  Message[]
+    members   Member[] // many-to-many via ChatMember
 }
 
 model Message {
-  id        String      @id @default(uuid())
-  content   String
-  senderId  String
-  chatId    String
-  createdAt DateTime    @default(now())
-  sender    Member  @relation(fields: [senderId], references: [id])
-  chat      Chat        @relation(fields: [chatId], references: [id])
+    id        String   @id @default(uuid())
+    content   String
+    senderId  String
+    chatId    String
+    createdAt DateTime @default(now())
+    sender    Member   @relation(fields: [senderId], references: [id])
+    chat      Chat     @relation(fields: [chatId], references: [id])
 }
 
 //join table
 model Member {
-  id        String     @id @default(uuid())
-  user      User       @relation(fields: [userId], references: [id])
-  userId    String
-  chat      Chat       @relation(fields: [chatId], references: [id])
-  chatId    String
-  messages  Message[]
-  joinedAt  DateTime   @default(now())
+    id       String    @id @default(uuid())
+    user     User      @relation(fields: [userId], references: [id])
+    userId   String
+    chat     Chat      @relation(fields: [chatId], references: [id])
+    chatId   String
+    messages Message[]
+    joinedAt DateTime  @default(now())
 
-  @@unique([userId, chatId]) // Prevent duplicate membership
+    @@unique([userId, chatId]) // Prevent duplicate membership
 }

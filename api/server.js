@@ -69,23 +69,35 @@ app.use("/api/chats", chatRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
 
-app.use("/api/keys", async (req, res) => {
-    const { userId } = req.body;
-    const user = await prisma.user.findUnique({
-        where: {
-            userId: userId,
-        },
-        select: {
-            publicKeys: true,
-        },
-    });
-    console.log("user keys: ", user);
+app.use("/api/upload-keys", (req, res) => {});
 
-    return res.status(200).json({
-        success: true,
-        message: "user public keys",
-        data: user,
-    });
+app.post("/api/keys", async (req, res) => {
+    try {
+        const { userId, publicKey } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ error: "userId required" });
+        }
+
+        bytesDecoded = Buffer.from(publicKey, "base64");
+
+        await prisma.publicKey.create({
+            data: {
+                userId: userId,
+                key: bytesDecoded,
+            },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "User public keys received",
+        });
+    } catch (err) {
+        console.error("GET KEYS ERROR:", err);
+        return res
+            .status(500)
+            .json({ success: false, error: "Internal server error" });
+    }
 });
 
 io.on("connection", (socket) => {
