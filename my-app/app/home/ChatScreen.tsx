@@ -24,6 +24,7 @@ import * as secureStore from "expo-secure-store";
 import { ApiResponse } from "@/types/api-response";
 import { User, PublicKey } from "@/types/user";
 import api from "@/utils/axios-Intercept";
+import { Buffer } from "buffer";
 
 // interface Message {
 //     id: string;
@@ -60,35 +61,65 @@ const ChatScreen = () => {
 
             const [pub_key, priv_k] = await kyber.generateKeyPair();
 
-            const str_pk = Buffer.from(priv_k).toString();
-            console.log("str_pk", str_pk);
+            const string_priv_k = Buffer.from(priv_k).toString();
+            console.log("str_pk", string_priv_k);
 
-            // sending the pub key to the server
-            socket.emit("pub_key", pub_key);
-            console.log("public_key", pub_key);
+            // store in local storage on web nd sstore on phone
+            if (Platform.OS == "web") {
+                localStorage.setItem("priv_k", string_priv_k);
+            } else {
+                await secureStore.setItemAsync("priv_k", string_priv_k);
+            }
 
-            //
-            secureStore.setItemAsync("priv_k", str_pk);
-
-            // make call to get the public key
-            async function sendPublicKeys() {
+            // post the public key
+            async function uploadPublicKeys() {
                 try {
                     const res = await axios.post(
                         `${process.env.EXPO_PUBLIC_BASE_URL}/api/keys`,
-                        { publicKey: pub_key },
+                        {
+                            publicKey: Buffer.from(pub_key).toString("base64"),
+                            userId: userId,
+                        },
                     );
 
-                    console.log("sendPublicKeys: ", res.statusText);
+                    console.log("sendPublicKeysStatus: ", res.statusText);
                 } catch (err) {
-                    console.error(
-                        "err getting public keys of other user: ",
-                        err,
-                    );
+                    console.error("err sending public keys of user: ", err);
                     throw err;
                 }
             }
 
-            sendPublicKeys();
+            uploadPublicKeys();
+
+            // uploadPublicKeys();
+
+            async function getReceiverKey() {
+                try {
+                    const res = await axios.post(
+                        `${process.env.EXPO_PUBLIC_BASE_URL}/api/keys/get`,
+                        {
+                            userId: otherMember?.userId,
+                        },
+                    );
+                    console.log("resdata", res.data);
+
+                    // converting incoming data from base64 back to uint8array
+                    const pk = new Uint8Array(
+                        Buffer.from(res.data.pk, "base64"),
+                    );
+
+                    //run encapsulate on received key to generate ct and shared secret key
+                    const sender = new MlKem512();
+                    const [ct, ssk] = await sender.encap(pk);
+                    console.log("ct", ct);
+                    console.log("ssk", ssk);
+                } catch (err) {
+                    console.error("getting keys", err);
+                    throw err;
+                }
+            }
+
+            getReceiverKey();
 
             socket.emit("key-exchange", (callback: CallableFunction) => {});
         };
