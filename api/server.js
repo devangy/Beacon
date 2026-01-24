@@ -69,7 +69,47 @@ app.use("/api/chats", chatRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
 
-app.use("/api/upload-keys", (req, res) => {});
+app.post("/api/keys/get", async (req, res) => {
+    try {
+        const { userId } = req.body;
+        console.log("userIdofothermemenr", userId);
+
+        const pk = await prisma.publicKey.findFirst({
+            where: {
+                userId: userId,
+                isUsed: false,
+            },
+        });
+
+        if (!pk) {
+            return res.status(404).json({
+                success: false,
+                message: "No unused key found for this user.",
+            });
+        }
+
+        // update key status to used once fetched
+        const updateUsed = await prisma.publicKey.update({
+            where: {
+                id: pk.id,
+            },
+            data: {
+                isUsed: true,
+            },
+        });
+
+        const pkbase64 = Buffer.from(pk.key).toString("base64");
+
+        console.log("get public keybase64: ", pk);
+
+        return res.status(200).json({
+            success: true,
+            pk: pkbase64,
+        });
+    } catch (err) {
+        console.error("get public keys: ", err);
+    }
+});
 
 app.post("/api/keys", async (req, res) => {
     try {
@@ -79,7 +119,7 @@ app.post("/api/keys", async (req, res) => {
             return res.status(400).json({ error: "userId required" });
         }
 
-        bytesDecoded = Buffer.from(publicKey, "base64");
+        let bytesDecoded = Buffer.from(publicKey, "base64");
 
         await prisma.publicKey.create({
             data: {
