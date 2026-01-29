@@ -25,6 +25,8 @@ import { ApiResponse } from "@/types/api-response";
 import { User, PublicKey } from "@/types/user";
 import api from "@/utils/axios-Intercept";
 import { Buffer } from "buffer";
+import { AsyncLocalStorage } from "async_hooks";
+import console from "console";
 
 // interface Message {
 //     id: string;
@@ -36,7 +38,7 @@ import { Buffer } from "buffer";
 
 const ChatScreen = () => {
     useEffect(() => {
-        (async () => {
+        async function getChatMessages() {
             const response = await axios.get(
                 `${process.env.EXPO_PUBLIC_BASE_URL}/api/messages/${chatId}`,
             );
@@ -53,7 +55,9 @@ const ChatScreen = () => {
             dispatch(setMessagesByChatId({ chatId, messages }));
 
             console.log("messagefromstate", messagesFromState);
-        })();
+        }
+
+        getChatMessages();
 
         const startSession = async (): Promise<void> => {
             //generate a key pair
@@ -89,11 +93,11 @@ const ChatScreen = () => {
                 }
             }
 
-            uploadPublicKeys();
+            await uploadPublicKeys();
 
             // uploadPublicKeys();
 
-            async function getReceiverKey() {
+            async function getReceiverPubKey() {
                 try {
                     const res = await axios.post(
                         `${process.env.EXPO_PUBLIC_BASE_URL}/api/keys/get`,
@@ -113,15 +117,79 @@ const ChatScreen = () => {
                     const [ct, ssk] = await sender.encap(pk);
                     console.log("ct", ct);
                     console.log("ssk", ssk);
+
+                    let ssk_string = Buffer.from("ssk").toString();
+
+                    if (Platform.OS == "web") {
+                        localStorage.setItem("ssk", ssk_string);
+                    } else {
+                        await secureStore.setItemAsync(
+                            `ssk_${chatId}`,
+                            ssk_string,
+                        );
+                    }
                 } catch (err) {
                     console.error("getting keys", err);
                     throw err;
                 }
             }
+            await getReceiverPubKey();
 
-            getReceiverKey();
+            async function sendCipherText() {
+                try {
+                    let ct_string = Buffer.from("ssk").toString();
+                    // send the ciphertext with ssk to the receiver
+                    const sendCipherText = await axios.post(
+                        `${process.env.EXPO_PUBLIC_BASE_URL}/api/ciphertext`,
+                        {
+                            ct: ct_string,
+                            otherMember: otherMember?.userId,
+                        },
+                    );
 
-            socket.emit("key-exchange", (callback: CallableFunction) => {});
+                    console.log("sendCipherText", sendCipherText);
+                } catch (err) {
+                    console.error(err);
+                    throw err;
+                }
+            }
+
+            await sendCipherText();
+
+            async function checkSsk() {
+                if (Platform.OS == "web") {
+                    const localSskWeb = localStorage.getItem("ssk");
+                    if (localSskWeb) {
+                        console.log(
+                            "using ssk found in localStorage: ",
+                            localSskWeb,
+                        );
+                    }
+                } else {
+                    const localSskPhone = await secureStore.getItemAsync(
+                        `ssk_${chatId}`,
+                    );
+                    if (localSskPhone != null) {
+                        console.log(
+                            "using ssk found in localSecurestor: ",
+                            localSskPhone,
+                        );
+                    }
+                }
+
+                const getChatSsk = await axios.post(
+                    `${process.env.EXPO_PUBLIC_BASE_URL}/api/ssk`,
+                    {
+                        chatId: chatId,
+                    },
+                );
+
+                const ssk_string = getChatSsk.data.ssk;
+
+                localStorage.setItem("ssk", ssk_string);
+            }
+
+            await checkSsk();
         };
 
         startSession();
@@ -174,7 +242,7 @@ const ChatScreen = () => {
 
     const sendMessage = (): void => {
         if (message.trim() === "") return; // if the message is empty simply return dont send it
-        // socket.emit('message', 'gaynigger');
+
         player.seekTo(0);
         player.play();
         player.release();
