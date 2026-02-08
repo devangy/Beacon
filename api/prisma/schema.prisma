@@ -14,15 +14,17 @@ datasource db {
 }
 
 model User {
-    id         String      @id @default(uuid())
-    githubId   Int         @unique
-    username   String
-    avatarUrl  String
-    chats      Member[] // Through join table
-    createdAt  DateTime    @default(now())
-    friends    Friend[]    @relation("UserFriends")
-    addedBy    Friend[]    @relation("FriendsUsers")
-    publicKeys PublicKey[]
+    id           String        @id @default(uuid())
+    githubId     Int           @unique
+    username     String
+    avatarUrl    String
+    chats        Member[] // Through join table
+    createdAt    DateTime      @default(now())
+    friends      Friend[]      @relation("UserFriends")
+    addedBy      Friend[]      @relation("FriendsUsers")
+    publicKeys   PublicKey[]
+    keyExchanges KeyExchange[]
+    messages     Message[]
 }
 
 model PublicKey {
@@ -34,6 +36,18 @@ model PublicKey {
     createdAt DateTime @default(now())
 
     @@unique([id])
+}
+
+model KeyExchange {
+    id          String   @id @default(uuid())
+    ciphertext  Bytes
+    userId      String
+    user        User     @relation(fields: [userId], references: [id])
+    receiverId  String
+    chatId      String
+    chat        Chat     @relation(fields: [chatId], references: [id])
+    createdAt   DateTime @default(now())
+    isDelivered Boolean
 }
 
 model Friend {
@@ -49,22 +63,25 @@ model Friend {
 }
 
 model Chat {
-    id        String    @id @default(uuid())
-    name      String? // group name
-    isGroup   Boolean   @default(false)
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    messages  Message[]
-    members   Member[] // many-to-many via ChatMember
+    id           String        @id @default(uuid())
+    name         String? // group name
+    isGroup      Boolean       @default(false)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+    messages     Message[]
+    members      Member[] // many-to-many via ChatMember
+    keyExchanges KeyExchange[]
 }
 
 model Message {
     id        String   @id @default(uuid())
     content   String
     senderId  String
+    memberId String
     chatId    String
     createdAt DateTime @default(now())
-    sender    Member   @relation(fields: [senderId], references: [id])
+    member  Member @relation(fields: [memberId], references: [id])
+    sender    User   @relation(fields: [senderId], references: [id])
     chat      Chat     @relation(fields: [chatId], references: [id])
 }
 

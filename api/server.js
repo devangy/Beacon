@@ -17,6 +17,8 @@ import pkg from "pino-multi-stream";
 import helmet from "helmet";
 // import { saveMessageToDB } from "./controllers/messageController.js";
 import { prisma } from "./utils/prismaClient.js";
+import { MlKem512 } from "mlkem";
+import { Cipher } from "node:crypto";
 
 const { multistream } = pkg;
 
@@ -140,9 +142,80 @@ app.post("/api/keys", async (req, res) => {
     }
 });
 
+// endpoint uploading ciphertext which contains the Shared secret key
+app.post("/api/ciphertext", async (req, res) => {
+    try {
+        const { ciphertext, receiverId, userId, chatId } = req.body;
+
+        let decoded_ct = Buffer.from(ciphertext, "base64");
+        console.log("server: received decoded_ct", decoded_ct);
+
+        const keyExchange = await prisma.keyExchange.create({
+            data: {
+                ciphertext: decoded_ct,
+                userId: userId,
+                chatId: chatId,
+                receiverId: receiverId,
+                isDelivered: false,
+            },
+        });
+
+        console.log("keyExchange", keyExchange);
+
+        return res.status(200).json({
+            success: true,
+            message: "Ciphertext uploaded successfully!",
+        });
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .json({ success: false, error: "Internal server error" });
+    }
+});
+
+// endpoint for getting a shared secret key for a chat using chatId
+app.post("/api/ciphertext/get", async (req, res) => {
+    try {
+        const { chatId, userId, receiverId } = req.body;
+
+        const ssk = await prisma.keyExchange.findFirst({
+            where: {
+                chatId: chatId,
+                userId: userId,
+                receiverId: receiverId,
+                isDelivered: false,
+            },
+        });
+
+        console.log("ciphertext in db:", ssk.ciphertext);
+
+        if (ssk) {
+            console.log("ssk ciphertext get", ssk);
+            res.status(200).json({
+                success: true,
+                chatId: ssk.chatId,
+                receiverId: ssk.receiverId,
+                ciphertext: Buffer.from(ssk.ciphertext).toString("base64"),
+                message: "ciphertext already exists on server!",
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: "Ciphertext not found on the server!",
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .json({ success: false, error: "Internal server error" });
+    }
+});
+
 io.on("connection", (socket) => {
     console.log("a user connected", socket.id);
-    socket.socket.on("key-exchange", async (callback) => {});
+    // socket.socket.on("key-exchange", async (callback) => {});
     socket.on("message", async (newMessage, callback) => {
         console.log("Received message:", newMessage);
         // callback("This is ack");
@@ -160,7 +233,7 @@ io.on("connection", (socket) => {
         const savedMessage = await prisma.message.create({
             data: {
                 chatId: member.chatId,
-                senderId: member.userId,
+                userId: member.userId,
                 content: newMessage.content,
                 // createdAt: newMessage.createdAt
             },

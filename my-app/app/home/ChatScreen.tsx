@@ -26,7 +26,6 @@ import { User, PublicKey } from "@/types/user";
 import api from "@/utils/axios-Intercept";
 import { Buffer } from "buffer";
 import { AsyncLocalStorage } from "async_hooks";
-import console from "console";
 
 // interface Message {
 //     id: string;
@@ -37,6 +36,22 @@ import console from "console";
 // }
 
 const ChatScreen = () => {
+    const [message, setMessage] = useState<string>("");
+
+    const otherMember = useAppSelector((state) => state.chat.otherMember);
+    const chatId = useAppSelector((state) => state.chat.selectedChatId);
+    const userId = useAppSelector((state) => state.auth.userId);
+
+    console.log("otherMember", otherMember);
+    console.log("chatID", chatId);
+
+    if (!chatId) throw new Error("Unable to get chat-Id from state");
+    if (!userId) throw new Error("Unable to get user-Id from state");
+
+    const messagesFromState = useAppSelector(
+        (state) => state.message.messages.byId[chatId],
+    );
+
     useEffect(() => {
         async function getChatMessages() {
             const response = await axios.get(
@@ -59,24 +74,47 @@ const ChatScreen = () => {
 
         getChatMessages();
 
-        const startSession = async (): Promise<void> => {
-            //generate a key pair
-            const kyber = new MlKem512();
+        const startSession = async () => {
+            // Get or generate private key
+            let priv_k_bytes;
+            let priv_k_base64 =
+                Platform.OS === "web"
+                    ? localStorage.getItem(`priv_k${userId}`)
+                    : await secureStore.getItemAsync(`priv_k${userId}`);
 
-            const [pub_key, priv_k] = await kyber.generateKeyPair();
-
-            const string_priv_k = Buffer.from(priv_k).toString();
-            console.log("str_pk", string_priv_k);
-
-            // store in local storage on web nd sstore on phone
-            if (Platform.OS == "web") {
-                localStorage.setItem("priv_k", string_priv_k);
+            if (priv_k_base64) {
+                priv_k_bytes = new Uint8Array(
+                    Buffer.from(priv_k_base64, "base64"),
+                );
+                console.log("Using existing private key", priv_k_bytes);
             } else {
-                await secureStore.setItemAsync("priv_k", string_priv_k);
+                // Generate a key pair
+                const kyber = new MlKem512();
+                const [pub_key, priv_k] = await kyber.generateKeyPair();
+
+                priv_k_bytes = priv_k;
+                const string_priv_k = Buffer.from(priv_k).toString("base64");
+
+                console.log("Generated new key pair");
+
+                // Store in local storage on web and secure store on phone
+                if (Platform.OS === "web") {
+                    localStorage.setItem(`priv_k${userId}`, string_priv_k);
+                } else {
+                    await secureStore.setItemAsync(
+                        `priv_k${userId}`,
+                        string_priv_k,
+                    );
+                }
+
+                // Upload the public key to server
+                await uploadPublicKeys(pub_key);
             }
 
-            // post the public key
-            async function uploadPublicKeys() {
+            // establish shared secret
+            await establishSharedSecret(priv_k_bytes);
+
+            async function uploadPublicKeys(pub_key: Uint8Array) {
                 try {
                     const res = await axios.post(
                         `${process.env.EXPO_PUBLIC_BASE_URL}/api/keys`,
@@ -93,11 +131,59 @@ const ChatScreen = () => {
                 }
             }
 
-            await uploadPublicKeys();
+            async function establishSharedSecret(priv_k_bytes: Uint8Array) {
+                try {
+                    // first check if SSK already exists locally
+                    const localSsk = await getSskLocally(chatId!);
 
-            // uploadPublicKeys();
+                    if (localSsk) {
+                        console.log("SSK already exists locally:", localSsk);
+                        return; // return if ssk exists locally
+                    }
 
-            async function getReceiverPubKey() {
+                    // if SSK doesn't exist locally check if other user already created one
+                    const ct_from_server = await getCiphertextFromServer();
+
+                    if (ct_from_server) {
+                        // Other user already created the SSK, we decapsulate their ciphertext
+                        console.log("Decapsulating ciphertext from other user");
+                        const ssk_bytes = await decapsulateCiphertext(
+                            ct_from_server,
+                            priv_k_bytes,
+                        );
+
+                        await storeSskLocally(ssk_bytes);
+                        console.log(
+                            "SSK derived from server ciphertext:",
+                            ssk_bytes,
+                        );
+                    } else {
+                        // No ciphertext exists, we need to create one
+                        console.log("Creating new SSK and ciphertext");
+
+                        // Get the other user's public key
+                        const otherUserPubKey = await getReceiverPubKey();
+
+                        // Encapsulate to create ciphertext and SSK
+                        const sender = new MlKem512();
+                        const [ct, ssk] = await sender.encap(otherUserPubKey);
+
+                        console.log("Generated ct:", ct);
+                        console.log("Generated ssk:", ssk);
+
+                        // Store SSK locally
+                        await storeSskLocally(ssk);
+
+                        // Send ciphertext to server
+                        await sendCipherText(ct);
+                    }
+                } catch (err) {
+                    console.error("Error establishing shared secret:", err);
+                    throw err;
+                }
+            }
+
+            async function getReceiverPubKey(): Promise<Uint8Array> {
                 try {
                     const res = await axios.post(
                         `${process.env.EXPO_PUBLIC_BASE_URL}/api/keys/get`,
@@ -105,108 +191,142 @@ const ChatScreen = () => {
                             userId: otherMember?.userId,
                         },
                     );
-                    console.log("resdata", res.data);
+                    console.log("Fetched other user's public key");
 
-                    // converting incoming data from base64 back to uint8array
+                    // Converting incoming data from base64 back to uint8array
                     const pk = new Uint8Array(
                         Buffer.from(res.data.pk, "base64"),
                     );
 
-                    //run encapsulate on received key to generate ct and shared secret key
-                    const sender = new MlKem512();
-                    const [ct, ssk] = await sender.encap(pk);
-                    console.log("ct", ct);
-                    console.log("ssk", ssk);
-
-                    let ssk_string = Buffer.from("ssk").toString();
-
-                    if (Platform.OS == "web") {
-                        localStorage.setItem("ssk", ssk_string);
+                    return pk;
+                } catch (err: any) {
+                    if (err.response && err.response.status === 404) {
+                        console.log(
+                            "Receiver public key not found on server (404)",
+                        );
                     } else {
-                        await secureStore.setItemAsync(
-                            `ssk_${chatId}`,
-                            ssk_string,
+                        console.error(
+                            "Network error fetching public key:",
+                            err.message,
                         );
                     }
-                } catch (err) {
-                    console.error("getting keys", err);
+                    console.error("Error fetching receiver public key:", err);
                     throw err;
                 }
             }
-            await getReceiverPubKey();
 
-            async function sendCipherText() {
+            async function getCiphertextFromServer(): Promise<string | null> {
                 try {
-                    let ct_string = Buffer.from("ssk").toString();
-                    // send the ciphertext with ssk to the receiver
-                    const sendCipherText = await axios.post(
-                        `${process.env.EXPO_PUBLIC_BASE_URL}/api/ciphertext`,
+                    const ct_from_server = await axios.post(
+                        `${process.env.EXPO_PUBLIC_BASE_URL}/api/ciphertext/get`,
                         {
-                            ct: ct_string,
-                            otherMember: otherMember?.userId,
+                            chatId: chatId,
+                            userId: otherMember?.userId, // Get ciphertext sent BY the other user
+                            receiverId: userId, // Intended FOR you
                         },
                     );
 
-                    console.log("sendCipherText", sendCipherText);
+                    if (ct_from_server.data.success === false) {
+                        console.log("No ciphertext found on server");
+                        return null;
+                    }
+
+                    return ct_from_server.data.ciphertext;
                 } catch (err) {
-                    console.error(err);
+                    console.error(
+                        "Error fetching ciphertext from server:",
+                        err,
+                    );
+                    return null;
+                }
+            }
+
+            async function decapsulateCiphertext(
+                ct_base64: string,
+                priv_k_bytes: Uint8Array,
+            ): Promise<Uint8Array> {
+                const ct_bytes = new Uint8Array(
+                    Buffer.from(ct_base64, "base64"),
+                );
+
+                console.log("ct_bytes: ", ct_bytes);
+                console.log("priv_k_bytes: ", priv_k_bytes);
+
+                const recipient = new MlKem512();
+                const ssk_bytes = await recipient.decap(ct_bytes, priv_k_bytes);
+
+                console.log("Decapsulated ssk_bytes: ", ssk_bytes);
+
+                return ssk_bytes;
+            }
+
+            async function sendCipherText(ct: Uint8Array) {
+                try {
+                    let ct_string = Buffer.from(ct).toString("base64");
+                    console.log("Sending ciphertext to server:", ct_string);
+
+                    const response = await axios.post(
+                        `${process.env.EXPO_PUBLIC_BASE_URL}/api/ciphertext`,
+                        {
+                            ciphertext: ct_string,
+                            chatId: chatId,
+                            receiverId: otherMember?.userId,
+                            userId: userId,
+                        },
+                    );
+
+                    console.log("Ciphertext sent successfully:", response.data);
+                } catch (err) {
+                    console.error("Error sending ciphertext:", err);
                     throw err;
                 }
             }
 
-            await sendCipherText();
+            async function getSskLocally(
+                chatId: string,
+            ): Promise<Uint8Array | null> {
+                if (Platform.OS === "web") {
+                    const localSskWeb = localStorage.getItem(`ssk_${chatId}`);
 
-            async function checkSsk() {
-                if (Platform.OS == "web") {
-                    const localSskWeb = localStorage.getItem("ssk");
                     if (localSskWeb) {
-                        console.log(
-                            "using ssk found in localStorage: ",
-                            localSskWeb,
+                        const ssk_bytes = new Uint8Array(
+                            Buffer.from(localSskWeb, "base64"),
                         );
+                        console.log("Found SSK in localStorage");
+                        return ssk_bytes;
                     }
                 } else {
                     const localSskPhone = await secureStore.getItemAsync(
                         `ssk_${chatId}`,
                     );
-                    if (localSskPhone != null) {
-                        console.log(
-                            "using ssk found in localSecurestor: ",
-                            localSskPhone,
+
+                    if (localSskPhone) {
+                        const ssk_bytes = new Uint8Array(
+                            Buffer.from(localSskPhone, "base64"),
                         );
+                        console.log("Found SSK in secureStore");
+                        return ssk_bytes;
                     }
                 }
 
-                const getChatSsk = await axios.post(
-                    `${process.env.EXPO_PUBLIC_BASE_URL}/api/ssk`,
-                    {
-                        chatId: chatId,
-                    },
-                );
-
-                const ssk_string = getChatSsk.data.ssk;
-
-                localStorage.setItem("ssk", ssk_string);
+                return null;
             }
 
-            await checkSsk();
+            async function storeSskLocally(ssk_bytes: Uint8Array) {
+                const ssk_string = Buffer.from(ssk_bytes).toString("base64");
+
+                if (Platform.OS === "web") {
+                    localStorage.setItem(`ssk_${chatId}`, ssk_string);
+                    console.log("Stored SSK in localStorage");
+                } else {
+                    await secureStore.setItemAsync(`ssk_${chatId}`, ssk_string);
+                    console.log("Stored SSK in secureStore");
+                }
+            }
         };
 
         startSession();
-    }, []); // Reset chat when friend changes
-
-    const [message, setMessage] = useState<string>("");
-
-    const otherMember = useAppSelector((state) => state.chat.otherMember);
-    const chatId = useAppSelector((state) => state.chat.selectedChatId);
-    const userId = useAppSelector((state) => state.auth.userId);
-
-    if (!chatId) throw new Error("Unable to get chat-Id from state");
-    if (!userId) throw new Error("Unable to get user-Id from state");
-
-    const messagesFromState = useAppSelector(
-        (state) => state.message.messages.byId[chatId],
-    );
+    }, [chatId, userId]); // Reset chat when friend changes
 
     // console.log('reduxmessage', messages)
     //
@@ -214,31 +334,7 @@ const ChatScreen = () => {
 
     const player = useAudioPlayer(require("../../assets/sounds/sent.mp3"));
 
-    console.log("otherMember", otherMember);
-    console.log("chatID", chatId);
-
     const dispatch = useAppDispatch();
-
-    // Initialize chat history when component mounts
-    useEffect(() => {
-        if (Platform.OS !== "web") return;
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Don't hijack focus if user is already in an input or pressing system keys (Ctrl/Cmd)
-            const isInput =
-                document.activeElement?.tagName === "INPUT" ||
-                document.activeElement?.tagName === "TEXTAREA";
-            const isModifier = e.metaKey || e.ctrlKey || e.altKey;
-
-            // Only focus if it's a single character (printable) and not a system shortcut
-            if (!isInput && !isModifier && e.key.length === 1) {
-                inputRef.current?.focus();
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, []); // Reset chat when friend changes
 
     const sendMessage = (): void => {
         if (message.trim() === "") return; // if the message is empty simply return dont send it

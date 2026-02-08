@@ -21,6 +21,7 @@
         "express-async-handler": "^1.2.0",
         "helmet": "^8.1.0",
         "jsonwebtoken": "^9.0.2",
+        "mlkem": "^2.5.0",
         "pino": "^9.7.0",
         "pino-http": "^10.5.0",
         "pino-multi-stream": "^6.0.0",

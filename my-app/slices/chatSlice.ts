@@ -10,7 +10,6 @@ interface chatState {
     };
     selectedChatId: string | null;
     otherMember: Member | null;
-    ssk: string | null;
 }
 
 const initialState: chatState = {
@@ -20,7 +19,6 @@ const initialState: chatState = {
     },
     selectedChatId: null,
     otherMember: null,
-    ssk: null,
 };
 
 const chatslice = createSlice({
@@ -43,13 +41,8 @@ const chatslice = createSlice({
         setOtherMember: (state, action: PayloadAction<Member>) => {
             state.otherMember = action.payload;
         },
-
-        setChatSsk: (state, action) => {
-            state.ssk = action.payload;
-        },
     },
 });
 
-export const { setUserChats, setChatId, setOtherMember, setChatSsk } =
-    chatslice.actions;
+export const { setUserChats, setChatId, setOtherMember } = chatslice.actions;
 export default chatslice.reducer;
