@@ -26,6 +26,7 @@ import { User, PublicKey } from "@/types/user";
 import api from "@/utils/axios-Intercept";
 import { Buffer } from "buffer";
 import { AsyncLocalStorage } from "async_hooks";
+import AesGcmCrypto from "react-native-aes-gcm-crypto";
 
 // interface Message {
 //     id: string;
@@ -282,35 +283,35 @@ const ChatScreen = () => {
                 }
             }
 
-            async function getSskLocally(
-                chatId: string,
-            ): Promise<Uint8Array | null> {
-                if (Platform.OS === "web") {
-                    const localSskWeb = localStorage.getItem(`ssk_${chatId}`);
+            // async function getSskLocally(
+            //     chatId: string,
+            // ): Promise<Uint8Array | null> {
+            //     if (Platform.OS === "web") {
+            //         const localSskWeb = localStorage.getItem(`ssk_${chatId}`);
 
-                    if (localSskWeb) {
-                        const ssk_bytes = new Uint8Array(
-                            Buffer.from(localSskWeb, "base64"),
-                        );
-                        console.log("Found SSK in localStorage");
-                        return ssk_bytes;
-                    }
-                } else {
-                    const localSskPhone = await secureStore.getItemAsync(
-                        `ssk_${chatId}`,
-                    );
+            //         if (localSskWeb) {
+            //             const ssk_bytes = new Uint8Array(
+            //                 Buffer.from(localSskWeb, "base64"),
+            //             );
+            //             console.log("Found SSK in localStorage");
+            //             return ssk_bytes;
+            //         }
+            //     } else {
+            //         const localSskPhone = await secureStore.getItemAsync(
+            //             `ssk_${chatId}`,
+            //         );
 
-                    if (localSskPhone) {
-                        const ssk_bytes = new Uint8Array(
-                            Buffer.from(localSskPhone, "base64"),
-                        );
-                        console.log("Found SSK in secureStore");
-                        return ssk_bytes;
-                    }
-                }
+            //         if (localSskPhone) {
+            //             const ssk_bytes = new Uint8Array(
+            //                 Buffer.from(localSskPhone, "base64"),
+            //             );
+            //             console.log("Found SSK in secureStore");
+            //             return ssk_bytes;
+            //         }
+            //     }
 
-                return null;
-            }
+            //     return null;
+            // }
 
             async function storeSskLocally(ssk_bytes: Uint8Array) {
                 const ssk_string = Buffer.from(ssk_bytes).toString("base64");
@@ -329,19 +330,59 @@ const ChatScreen = () => {
     }, [chatId, userId]); // Reset chat when friend changes
 
     // console.log('reduxmessage', messages)
-    //
+
+    async function getSskLocally(chatId: string): Promise<Uint8Array | null> {
+        if (Platform.OS === "web") {
+            const localSskWeb = localStorage.getItem(`ssk_${chatId}`);
+
+            if (localSskWeb) {
+                const ssk_bytes = new Uint8Array(
+                    Buffer.from(localSskWeb, "base64"),
+                );
+                console.log("Found SSK in localStorage");
+                return ssk_bytes;
+            }
+        } else {
+            const localSskPhone = await secureStore.getItemAsync(
+                `ssk_${chatId}`,
+            );
+
+            if (localSskPhone) {
+                const ssk_bytes = new Uint8Array(
+                    Buffer.from(localSskPhone, "base64"),
+                );
+                console.log("Found SSK in secureStore");
+                return ssk_bytes;
+            }
+        }
+
+        return null;
+    }
+
     const inputRef = useRef<TextInput>(null);
 
     const player = useAudioPlayer(require("../../assets/sounds/sent.mp3"));
 
     const dispatch = useAppDispatch();
 
-    const sendMessage = (): void => {
+    const encryptSendMessage = async (): Promise<void> => {
         if (message.trim() === "") return; // if the message is empty simply return dont send it
 
         player.seekTo(0);
         player.play();
         player.release();
+
+        const ssk = await getSskLocally(chatId);
+        if (!ssk) throw new Error("sendmessage:SSK not found");
+
+        const ssk_string = Buffer.from(ssk).toString("base64");
+
+        // encrypt the payload using AES-GCM
+        const encryptedPayload = await AesGcmCrypto.encrypt(
+            message.trim(),
+            false,
+            ssk_string,
+        );
 
         // create temp ID for msg
         const tempId = Date.now().toString();
@@ -351,11 +392,8 @@ const ChatScreen = () => {
             id: tempId,
             chatId: chatId,
             senderId: userId,
-            content: message.trim(),
-            createdAt: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-            }),
+            payload: encryptedPayload,
+            createdAt: new Date().toISOString(),
         };
 
         socket.emit("message", newMessage, (response: string) => {
@@ -460,12 +498,12 @@ const ChatScreen = () => {
                             placeholderTextColor="#A0AEC0"
                             value={message}
                             onChangeText={setMessage}
-                            onSubmitEditing={() => sendMessage()}
+                            onSubmitEditing={() => encryptSendMessage()}
                             ref={inputRef}
                         />
                         <TouchableOpacity
                             className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-500 w-14 h-10 rounded-lg items-center justify-center"
-                            onPress={sendMessage}
+                            onPress={encryptSendMessage}
                             disabled={message.trim() === ""}
                         >
                             <SendHorizontal color="white" size={22} />
