@@ -617,14 +617,57 @@ const ChatScreen = () => {
     }
 
     const inputRef = useRef<TextInput>(null);
+    const flatListRef = useRef<FlatList>(null);
     const player = useAudioPlayer(require("../../assets/sounds/sent.mp3"));
+
+    // Auto-focus input on keyboard press
+    useEffect(() => {
+        if (Platform.OS === "web") {
+            const handleKeyPress = (event: KeyboardEvent) => {
+                // Ignore if already focused on input
+                if (
+                    document.activeElement?.tagName === "INPUT" ||
+                    document.activeElement?.tagName === "TEXTAREA"
+                ) {
+                    return;
+                }
+
+                // Ignore special keys (Ctrl, Alt, Shift, Esc, etc.)
+                if (
+                    event.ctrlKey ||
+                    event.metaKey ||
+                    event.altKey ||
+                    event.key === "Escape" ||
+                    event.key === "Tab" ||
+                    event.key === "Enter" ||
+                    event.key.startsWith("Arrow") ||
+                    event.key === "Backspace" ||
+                    event.key === "Delete"
+                ) {
+                    return;
+                }
+
+                // If it's a regular character key, focus the input
+                if (event.key.length === 1) {
+                    inputRef.current?.focus();
+                }
+            };
+
+            // Add event listener
+            window.addEventListener("keydown", handleKeyPress);
+
+            // Cleanup
+            return () => {
+                window.removeEventListener("keydown", handleKeyPress);
+            };
+        }
+    }, []);
 
     const encryptSendMessage = async (): Promise<void> => {
         if (messageInput.trim() === "") return;
 
         player.seekTo(0);
         player.play();
-        player.release();
 
         try {
             const ssk = await getSskLocally(chatId);
@@ -690,21 +733,23 @@ const ChatScreen = () => {
         return (
             // This is main container with nested message box views
             <View
-                className={`mb-2 flex flex-col ${isUser ? "items-start" : " items-end"}`}
+                className={`mb-4 flex flex-col ${isUser ? "items-start" : "items-end"}`}
             >
                 <View // This is message box rendered based on user or the other chat member type based styling
-                    className={`flex  items-center justify-center rounded-lg px-4 py-2 max-w-[65%] ${
+                    className={`rounded-lg px-4 py-2 max-w-[75%] ${
                         isUser
-                            ? "bg-blue-700 rounded-bl-none"
-                            : "bg-stone-600 rounded-tr-none"
+                            ? "bg-blue-600 rounded-bl-none"
+                            : "bg-stone-700 rounded-tr-none"
                     }`}
                 >
-                    <Text className="text-white text-md font-sans">
+                    <Text
+                        className="text-white text-base leading-5"
+                        style={{ flexWrap: "wrap" }}
+                    >
                         {item.payload}
                     </Text>
                 </View>
-
-                <Text className="text-gray-400 text-xs mt-1">
+                <Text className="text-gray-300 text-[10px] mt-1 px-1 justify-end">
                     {new Date(item.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -755,12 +800,27 @@ const ChatScreen = () => {
                     keyExtractor={(item) => item.id}
                     className="flex-1 p-4"
                     renderItem={renderChatItem}
-                    contentContainerStyle={{ paddingBottom: 10 }}
+                    contentContainerStyle={{ paddingBottom: 30 }}
                     showsVerticalScrollIndicator={false}
+                    ref={flatListRef}
+                    onContentSizeChange={() => {
+                        setTimeout(() => {
+                            flatListRef.current?.scrollToEnd({
+                                animated: true,
+                            });
+                        }, 100);
+                    }}
+                    onLayout={() => {
+                        setTimeout(() => {
+                            flatListRef.current?.scrollToEnd({
+                                animated: false,
+                            });
+                        }, 50);
+                    }}
                 />
 
                 {/* Message Input */}
-                <View className="flex-row items-center border-t border-gray-800 p-4">
+                <View className="flex-row items-center border-t border-gray-800 p-3">
                     <View className="flex-1 relative">
                         <TextInput
                             className="bg-gray-800 text-white rounded-lg px-4 py-3 outline-none"
