@@ -8,36 +8,46 @@ import { Message } from "@/types/message";
 // }
 
 interface MessagesState {
-  messages: {
-    byId: Record<string, Message[]>;
-  };
+    messages: {
+        byId: Record<string, Message[]>;
+    };
 }
 
 const initialState: MessagesState = {
-  messages: {
-    byId: {},
-  },
+    messages: {
+        byId: {},
+    },
 };
 
 const messageSlice = createSlice({
-  name: "messages",
-  initialState,
-  reducers: {
-    setMessagesByChatId: (state,action: PayloadAction<{chatId: string, messages: Message[]}>) => {
-       const {chatId, messages} = action.payload
-       state.messages.byId[chatId] = messages 
-    }, 
-    addNewMessage: (
-      state,
-      action: PayloadAction<{ chatId: string; message: Message }>
-    ) => {
-      const { chatId, message } = action.payload;
-      if (!state.messages.byId[chatId]) {
-        state.messages.byId[chatId] = [];
-      }
-      state.messages.byId[chatId].push(message);
+    name: "messages",
+    initialState,
+    reducers: {
+        setMessagesByChatId: (
+            state,
+            action: PayloadAction<{ chatId: string; messages: Message[] }>,
+        ) => {
+            const { chatId, messages } = action.payload;
+            state.messages.byId[chatId] = messages;
+        },
+        addNewMessage: (
+            state,
+            action: PayloadAction<{ chatId: string; message: Message }>,
+        ) => {
+            const { chatId, message } = action.payload;
+            if (!state.messages.byId[chatId]) {
+                state.messages.byId[chatId] = [];
+            }
+            // Check if message already exists to prevent duplicates
+            const messageExists = state.messages.byId[chatId].some(
+                (msg) => msg.id === message.id,
+            );
+
+            if (!messageExists) {
+                state.messages.byId[chatId].push(message);
+            }
+        },
     },
-  },
 });
 
 export const { addNewMessage, setMessagesByChatId } = messageSlice.actions;

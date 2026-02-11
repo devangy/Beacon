@@ -1,13 +1,7 @@
 export interface Message {
     id: string;
-    payload: EncryptedData;
+    payload: string;
     senderId: string;
     chatId: string;
     createdAt: string;
 }
-
-type EncryptedData = {
-    iv: string;
-    tag: string;
-    content: string;
-};

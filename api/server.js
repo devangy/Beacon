@@ -216,6 +216,13 @@ app.post("/api/ciphertext/get", async (req, res) => {
 io.on("connection", (socket) => {
     console.log("a user connected", socket.id);
     // socket.socket.on("key-exchange", async (callback) => {});
+    //
+
+    socket.on("chat:join", async (userId, chatId) => {
+        console.log("Joined chat", userId, chatId);
+        socket.join(chatId);
+    });
+
     socket.on("message", async (newMessage, callback) => {
         console.log("Received message:", newMessage);
         // callback("This is ack");
@@ -233,11 +240,17 @@ io.on("connection", (socket) => {
         const savedMessage = await prisma.message.create({
             data: {
                 chatId: member.chatId,
-                userId: member.userId,
-                content: newMessage.content,
+                senderId: newMessage.userId,
+                memberId: member.id,
+                payload: newMessage.payload,
                 // createdAt: newMessage.createdAt
             },
         });
+
+        console.log("Saved messageDB:", savedMessage);
+
+        // emit message to all users in the chat
+        io.to(member.chatId).emit("message", savedMessage);
 
         // Send success response with the saved message
         callback({ success: true, message: savedMessage });
