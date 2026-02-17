@@ -1,41 +1,27 @@
-#stage 1 builder
+# build stage
 FROM node:22-bookworm-slim AS builder
-
 WORKDIR /app
-
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY prisma ./prisma
 RUN npx prisma generate
 
-
 COPY . .
 
-# stage2  using production runner
+# production stage
 FROM node:22-bookworm-slim AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
+# copy everything from builder to prod
+COPY --from=builder /app ./
 
-# Copy generated Prisma client and necessary application code from the builder stage
-COPY --from=builder /app/node_modules/.prisma /app/node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma /app/node_modules/@prisma
-
-COPY . .
-
-
-
-
-
-# Create logs directory and give permission
+# create logs dir and set permissions
 RUN mkdir -p /app/logs && chown -R node:node /app
 
 USER node
-
 EXPOSE 3082
-
-
 CMD ["node", "server.js"]

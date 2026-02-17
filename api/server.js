@@ -1,4 +1,3 @@
-import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -17,8 +16,7 @@ import pkg from "pino-multi-stream";
 import helmet from "helmet";
 // import { saveMessageToDB } from "./controllers/messageController.js";
 import { prisma } from "./utils/prismaClient.js";
-import { MlKem512 } from "mlkem";
-import { Cipher } from "node:crypto";
+import express from "express";
 
 const { multistream } = pkg;
 
@@ -53,8 +51,18 @@ export const io = new Server(server, {
 });
 
 // middlewares
-app.use(helmet());
-app.use(cors({ origin: "*" }));
+app.use(
+    helmet({
+        crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+);
+app.use(
+    cors({
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());

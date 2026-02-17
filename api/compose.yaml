@@ -1,0 +1,26 @@
+services:
+    db:
+        image: postgres:17-alpine
+        environment:
+            POSTGRES_USER: beacon
+            POSTGRES_PASSWORD: beacon
+            POSTGRES_DB: beacon
+        network_mode: "host"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+    backend:
+        build:
+            context: .
+        restart: unless-stopped
+        network_mode: "host"
+        ports:
+            - "3082:3082"
+        environment:
+            DATABASE_URL: postgres://beacon:beacon@db:5432/beacon
+        depends_on:
+            - db
+
+volumes:
+    pgdata:
