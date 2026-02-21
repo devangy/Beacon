@@ -21,6 +21,7 @@ import { authUser } from "@/types/authUser";
 import { setAuthUser } from "@/slices/authSlice";
 import { setToken, getToken } from "@/hooks/authToken";
 import { Dimensions } from "react-native";
+import SvgComponent from "../components/SvgComponent";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -91,7 +92,7 @@ export default function Index() {
     };
 
     const redirectUri = makeRedirectUri({
-        scheme: 'myapp',
+        scheme: "myapp",
     });
 
     const [request, response, promptAsync] = useAuthRequest(
@@ -99,7 +100,7 @@ export default function Index() {
             clientId: process.env.EXPO_PUBLIC_GHUB_CID || "add",
             scopes: ["read:user", "user:email"],
             redirectUri: Platform.select({
-                web: "http://localhost:8081", // For web browser
+                web: process.env.EXPO_PUBLIC_REDIRECT_WEB, // For web browser
                 default: makeRedirectUri({
                     // For mobile
                     scheme: "myapp",
@@ -168,17 +169,14 @@ export default function Index() {
         handleOAuth();
     }, [response]);
 
-    const { width } = Dimensions.get("window");
-    const svgSize = width * 0.2; // 20% of screen width
-
     return (
         <View className="flex-1 flex-col border-1 border-red-400 bg-[#101820] items-center">
-            <View className="flex flex-row w-full items-center justify-center mt-60 gap-10">
-                {/* Wrapped Image inside a View */}
-                <View className="flex h-20 w-20 p-4 bg-green-300 rounded-xl justify-center items-center">
-                    <Svg height={92} width={92} className="lg:h-96" />
+            <View className="flex flex-row w-full items-center justify-center mt-56 gap-10">
+                <View className="h-20 w-20 bg-green-300 rounded-2xl justify-center items-center overflow-hidden">
+                    <SvgComponent />
                 </View>
-                <Text className="flex text-7xl font-light  mt-4 text-white subpixel-antialiased">
+
+                <Text className="text-7xl font-light mt-1 text-white subpixel-antialiased ">
                     Beacon
                 </Text>
             </View>
@@ -224,7 +222,7 @@ export default function Index() {
                                 fontFamily: "GeistMono",
                             }}
                         >
-                            Sign in with GitHub
+                            Login with GitHub
                         </Text>
                     </TouchableOpacity>
                 </Animated.View>

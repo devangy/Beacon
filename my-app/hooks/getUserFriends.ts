@@ -8,7 +8,7 @@ export const getUserFriends = (userId: string) => {
         queryKey: ["userFriends", userId],
         queryFn: async () => {
             const response = await axios.get<ApiResponse<Friend[]>>(
-                `http://localhost:3082/api/friends/${userId}`,
+                `${process.env.EXPO_BASE_URL}/api/friends/${userId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${process.env.EXPO_PUBLIC_ACCESS_TOKEN}`,
