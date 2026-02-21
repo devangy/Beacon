@@ -24,6 +24,7 @@ export async function handleLogin(req, res) {
             "https://github.com/login/oauth/access_token",
             {
                 code,
+                code_verifier,
                 client_id: process.env.GITHUB_CLIENT_ID,
                 client_secret: process.env.GITHUB_CLIENT_SECRET,
                 ...(code_verifier && { code_verifier }),
@@ -37,6 +38,14 @@ export async function handleLogin(req, res) {
         );
 
         const githubAccessToken = tokenRes.data.access_token;
+
+        if (!githubAccessToken) {
+            console.log("GITHUB TOKEN FAILED:", tokenRes.data);
+            return res.status(400).json({
+                success: false,
+                error: tokenRes.data,
+            });
+        }
 
         console.log("github res", githubAccessToken);
 
