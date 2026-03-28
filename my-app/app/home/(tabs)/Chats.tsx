@@ -135,7 +135,8 @@ export default function Chats() {
 
             {/* Floating New Chat Button */}
             <TouchableOpacity
-                className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg shadow-lg"
+                className="absolute bottom-7 right-10 bg-gray-800 p-3 rounded-lg
+                -lg"
                 onPress={() => handleStartChat}
             >
                 <MessageSquarePlus size={24} color="#93FC00" />

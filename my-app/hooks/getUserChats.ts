@@ -9,7 +9,7 @@ export const useGetUserChats = (userId: string, token?: string | undefined) => {
         queryKey: ["userChats", userId],
         queryFn: async () => {
             const response = await axios.get<ApiResponse<Chat[]>>(
-                `${process.env.EXPO_BASE_URL}/api/chats/all-chats`,
+                `${process.env.EXPO_PUBLIC_BASE_URL}/api/chats/all-chats`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
