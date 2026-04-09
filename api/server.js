@@ -16,6 +16,8 @@ import pkg from "pino-multi-stream";
 import helmet from "helmet";
 // import { saveMessageToDB } from "./controllers/messageController.js";
 import { prisma } from "./utils/prismaClient.js";
+import { ensureBotUser } from "./utils/botUser.js";
+import { getAIResponse } from "./controllers/aiController.js";
 import express from "express";
 
 const { multistream } = pkg;
@@ -76,6 +78,20 @@ app.use("/test", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+
+// Check if a chat is an AI chat (must be before chatRouter)
+app.get("/api/chats/is-ai/:chatId", async (req, res) => {
+    try {
+        const chat = await prisma.chat.findUnique({
+            where: { id: req.params.chatId },
+            select: { isAI: true },
+        });
+        res.json({ isAI: chat?.isAI ?? false });
+    } catch (err) {
+        res.json({ isAI: false });
+    }
+});
+
 app.use("/api/chats", chatRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/messages", messageRouter);
@@ -85,29 +101,24 @@ app.post("/api/keys/get", async (req, res) => {
         const { userId } = req.body;
         console.log("userIdofothermemenr", userId);
 
+        // Get the user's most recent public key.
+        // ML-KEM public keys are safe to reuse — each encapsulation
+        // produces a unique ciphertext and shared secret.
         const pk = await prisma.publicKey.findFirst({
             where: {
                 userId: userId,
-                isUsed: false,
+            },
+            orderBy: {
+                createdAt: "desc",
             },
         });
 
         if (!pk) {
             return res.status(404).json({
                 success: false,
-                message: "No unused key found for this user.",
+                message: "No public key found for this user.",
             });
         }
-
-        // update key status to used once fetched
-        const updateUsed = await prisma.publicKey.update({
-            where: {
-                id: pk.id,
-            },
-            data: {
-                isUsed: true,
-            },
-        });
 
         const pkbase64 = Buffer.from(pk.key).toString("base64");
 
@@ -197,23 +208,22 @@ app.post("/api/ciphertext/get", async (req, res) => {
             },
         });
 
-        console.log("ciphertext in db:", ssk.ciphertext);
-
-        if (ssk) {
-            console.log("ssk ciphertext get", ssk);
-            res.status(200).json({
-                success: true,
-                chatId: ssk.chatId,
-                receiverId: ssk.receiverId,
-                ciphertext: Buffer.from(ssk.ciphertext).toString("base64"),
-                message: "ciphertext already exists on server!",
-            });
-        } else {
-            res.status(404).json({
+        if (!ssk) {
+            return res.status(200).json({
                 success: false,
                 message: "Ciphertext not found on the server!",
             });
         }
+
+        console.log("ciphertext in db:", ssk.ciphertext);
+        console.log("ssk ciphertext get", ssk);
+        res.status(200).json({
+            success: true,
+            chatId: ssk.chatId,
+            receiverId: ssk.receiverId,
+            ciphertext: Buffer.from(ssk.ciphertext).toString("base64"),
+            message: "ciphertext already exists on server!",
+        });
     } catch (err) {
         console.error(err);
         return res
@@ -233,37 +243,87 @@ io.on("connection", (socket) => {
     });
 
     socket.on("message", async (newMessage, callback) => {
-        console.log("Received message:", newMessage);
-        // callback("This is ack");
+        try {
+            console.log("Received message:", newMessage);
 
-        // retrieving the member info the user is part of from userId and chatId
-        const member = await prisma.member.findFirst({
-            where: {
-                userId: newMessage.userId,
-                chatId: newMessage.chatId,
-            },
-        });
+            // retrieving the member info the user is part of from userId and chatId
+            const member = await prisma.member.findFirst({
+                where: {
+                    userId: newMessage.userId,
+                    chatId: newMessage.chatId,
+                },
+            });
 
-        console.log("memberfromuserid", member);
+            console.log("memberfromuserid", member);
 
-        const savedMessage = await prisma.message.create({
-            data: {
-                chatId: member.chatId,
-                senderId: newMessage.userId,
-                memberId: member.id,
-                payload: newMessage.payload,
-                // createdAt: newMessage.createdAt
-            },
-        });
+            if (!member) {
+                console.error("Member not found for userId:", newMessage.userId, "chatId:", newMessage.chatId);
+                if (callback) callback({ success: false, error: "Member not found" });
+                return;
+            }
 
-        console.log("Saved messageDB:", savedMessage);
+            const savedMessage = await prisma.message.create({
+                data: {
+                    chatId: member.chatId,
+                    senderId: newMessage.userId,
+                    memberId: member.id,
+                    payload: newMessage.payload,
+                },
+            });
 
-        // emit message to all users in the chat
-        io.to(member.chatId).emit("message", savedMessage);
+            console.log("Saved messageDB:", savedMessage);
 
-        // Send success response with the saved message
-        callback({ success: true, message: savedMessage });
-        console.log("saved message", savedMessage);
+            // emit message to all users in the chat
+            io.to(member.chatId).emit("message", savedMessage);
+
+            // Send success response with the saved message
+            if (callback) callback({ success: true, message: savedMessage });
+            console.log("saved message", savedMessage);
+
+            // Check if this is an AI chat - if so, generate bot reply
+            const chat = await prisma.chat.findUnique({
+                where: { id: newMessage.chatId },
+            });
+
+            if (chat && chat.isAI) {
+                // Get the bot user's member record in this chat
+                const botUser = await prisma.user.findFirst({
+                    where: { isBot: true },
+                });
+
+                if (!botUser || newMessage.userId === botUser.id) return;
+
+                const botMember = await prisma.member.findFirst({
+                    where: {
+                        userId: botUser.id,
+                        chatId: newMessage.chatId,
+                    },
+                });
+
+                if (!botMember) return;
+
+                // Call AI API (payload is plaintext for AI chats)
+                const aiReply = await getAIResponse(newMessage.payload);
+
+                const botMessage = await prisma.message.create({
+                    data: {
+                        chatId: newMessage.chatId,
+                        senderId: botUser.id,
+                        memberId: botMember.id,
+                        payload: aiReply,
+                    },
+                });
+
+                console.log("Bot reply saved:", botMessage);
+
+                // Send bot reply to room and directly to sender's socket as fallback
+                io.to(newMessage.chatId).emit("message", botMessage);
+                socket.emit("message", botMessage);
+            }
+        } catch (err) {
+            console.error("Error in message handler:", err);
+            if (callback) callback({ success: false, error: "Internal error" });
+        }
     });
 });
 
@@ -274,6 +334,12 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    // Ensure bot user exists on startup
+    try {
+        await ensureBotUser();
+    } catch (err) {
+        console.error("Failed to initialize bot user:", err);
+    }
 });

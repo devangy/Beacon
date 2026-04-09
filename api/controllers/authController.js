@@ -3,6 +3,7 @@ dotenv.config();
 import { prisma } from "../utils/prismaClient.js";
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import { setupBotForNewUser } from "../utils/botUser.js";
 
 console.log("Client ID:", process.env.GITHUB_CLIENT_ID);
 console.log("Client Secret:", process.env.GITHUB_CLIENT_SECRET);
@@ -74,6 +75,15 @@ export async function handleLogin(req, res) {
         });
 
         console.log("newUserENtry", newUserEntry);
+
+        // Setup Baburao AI Assistant (runs every login, skips if already set up)
+        try {
+            await setupBotForNewUser(newUserEntry.id);
+            console.log("Bot setup complete for user:", newUserEntry.id);
+        } catch (botErr) {
+            console.error("Failed to setup bot for user:", botErr);
+            // Don't fail the login if bot setup fails
+        }
 
         // creating JWT Token with githubId  of our created or fetched user
 

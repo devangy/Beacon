@@ -14,7 +14,7 @@ export const getUserChats = async (req, res) => {
             .json({ message: "Unauthorized: No token provided" });
 
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = payload.id;
+    const userId = payload.userId;
 
     console.log("userId extrct", userId);
 
@@ -30,6 +30,7 @@ export const getUserChats = async (req, res) => {
         select: {
             id: true,
             isGroup: true,
+            isAI: true,
             members: {
                 select: {
                     id: true, // Member's ID
