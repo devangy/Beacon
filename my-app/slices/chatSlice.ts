@@ -10,6 +10,7 @@ interface chatState {
     };
     selectedChatId: string | null;
     otherMember: Member | null;
+    isAIChat: boolean;
 }
 
 const initialState: chatState = {
@@ -19,6 +20,7 @@ const initialState: chatState = {
     },
     selectedChatId: null,
     otherMember: null,
+    isAIChat: false,
 };
 
 const chatslice = createSlice({
@@ -41,8 +43,12 @@ const chatslice = createSlice({
         setOtherMember: (state, action: PayloadAction<Member>) => {
             state.otherMember = action.payload;
         },
+
+        setIsAIChat: (state, action: PayloadAction<boolean>) => {
+            state.isAIChat = action.payload;
+        },
     },
 });
 
-export const { setUserChats, setChatId, setOtherMember } = chatslice.actions;
+export const { setUserChats, setChatId, setOtherMember, setIsAIChat } = chatslice.actions;
 export default chatslice.reducer;

@@ -18,6 +18,7 @@ export interface Chat {
   id: string ;
   name: string | null;
   isGroup: boolean;
+  isAI: boolean;
   members: Member[];
   messages: Message[];
   createdAt: Date;

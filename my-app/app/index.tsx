@@ -148,6 +148,8 @@ export default function Index() {
 
     useEffect(() => {
         const handleOAuth = async () => {
+            console.log(response);
+            if (loading || response?.type !== "success") return;
             if (response?.type === "success") {
                 setLoading(true);
                 const { code } = response.params;
@@ -180,7 +182,7 @@ export default function Index() {
         };
 
         handleOAuth();
-    }, [response]);
+    }, [response, loading]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "#0a0f1a" }}>

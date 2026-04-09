@@ -14,7 +14,7 @@ import { useGetUserChats } from "@/hooks/getUserChats";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { Chat, Member } from "@/types/chat";
 import { useMemo } from "react";
-import { setChatId, setOtherMember } from "@/slices/chatSlice";
+import { setChatId, setOtherMember, setIsAIChat } from "@/slices/chatSlice";
 
 // user status color
 const getStatusColor = (status: string) => {
@@ -57,6 +57,7 @@ export default function Chats() {
                 userId: otherMember?.user.id,
                 name: otherMember?.user?.username ?? "Unknown",
                 avatarUrl: otherMember?.user?.avatarUrl ?? "",
+                isAI: chat.isAI ?? false,
             };
         });
     }, [chats, userId]);
@@ -93,11 +94,13 @@ export default function Chats() {
     console.log("Chats data:", chats);
 
     const router = useRouter();
-    const handleStartChat = (chatId: string) => {
-        console.log("Start new chat", chatId);
+    const handleStartChat = (item: typeof members extends (infer T)[] | undefined ? T : never) => {
+        if (!item) return;
+        console.log("Start new chat", item.chatId);
 
-        dispatch(setChatId(chatId));
-        dispatch(setOtherMember(chatWithUser));
+        dispatch(setChatId(item.chatId!));
+        dispatch(setOtherMember(item as any));
+        dispatch(setIsAIChat(item.isAI));
         router.push("/home/ChatScreen");
     };
 
@@ -108,7 +111,7 @@ export default function Chats() {
                 showsVerticalScrollIndicator={false}
                 keyExtractor={(item) => item.chatId!}
                 renderItem={({ item }) => (
-                    <Pressable onPress={() => handleStartChat(item.chatId!)}>
+                    <Pressable onPress={() => handleStartChat(item)}>
                         <View className="mb-3 border-b border-gray-600 pb-2 flex-row items-center text-md">
                             {/* Avatar Container with Status Indicator */}
                             <View className="relative mr-3">
