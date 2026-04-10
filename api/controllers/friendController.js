@@ -13,9 +13,6 @@ export const getFriends = async (req, res) => {
       where: {
         userId: userId,
         status: "accepted",
-        friend: {
-          isBot: false,
-        },
       },
       select: {
         friend: {
