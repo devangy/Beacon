@@ -15,6 +15,7 @@ import {
     Text,
     TouchableOpacity,
     Image,
+    ActivityIndicator,
 } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -79,6 +80,21 @@ export default function Friends() {
     // );
 
     // const navigateToChat = (friend: Friend) => {\
+
+    if (isLoading) {
+        return (
+            <View
+                style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "black",
+                }}
+            >
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
