@@ -94,7 +94,9 @@ export default function Chats() {
     console.log("Chats data:", chats);
 
     const router = useRouter();
-    const handleStartChat = (item: typeof members extends (infer T)[] | undefined ? T : never) => {
+    const handleStartChat = (
+        item: typeof members extends (infer T)[] | undefined ? T : never,
+    ) => {
         if (!item) return;
         console.log("Start new chat", item.chatId);
 
