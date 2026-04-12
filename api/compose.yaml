@@ -32,7 +32,7 @@ services:
     tunnel:
         image: cloudflare/cloudflared:latest
         restart: unless-stopped
-        command: tunnel --url http://backend:3082 --protocol http2
+        command: tunnel --url http://backend:3082
         depends_on:
             - backend
         networks:

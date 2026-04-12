@@ -79,7 +79,7 @@ export default function TabLayout() {
             }}
         >
             <Tabs.Screen
-                name="Friends"
+                name="friends"
                 options={{
                     title: "Contacts",
                     headerStyle: { backgroundColor: "black" },
@@ -105,7 +105,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="Chats"
+                name="chats"
                 options={{
                     title: "Chats",
                     headerStyle: { backgroundColor: "black" },
@@ -116,7 +116,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="Profile"
+                name="profile"
                 options={{
                     title: "Profile",
                     headerStyle: { backgroundColor: "black" },

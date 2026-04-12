@@ -132,13 +132,13 @@ export default function Index() {
 
     const [request, response, promptAsync] = useAuthRequest(
         {
-            clientId: process.env.EXPO_PUBLIC_GHUB_CID || "add",
+            clientId: "Iv23liH1VM9aPXjaTsUu",
             scopes: ["read:user", "user:email"],
             redirectUri: Platform.select({
                 web: process.env.EXPO_PUBLIC_REDIRECT_WEB,
                 default: makeRedirectUri({
                     scheme: "myapp",
-                    path: "oauth",
+                    path: "home/chats",
                 }),
             }),
             usePKCE: true,
@@ -173,7 +173,7 @@ export default function Index() {
                         }),
                     );
 
-                    router.push("/home/Friends");
+                    router.push("/home/chats");
                 } catch (error: any) {
                     console.error("Authentication failed:", error);
                     setLoading(false);
