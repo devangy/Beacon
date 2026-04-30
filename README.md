@@ -23,7 +23,6 @@ Beacon is designed to go beyond traditional chat apps by integrating:
 
 ## 🏗️ Architecture
 
-> *Add your high-level architecture diagram below*
 
 <img width="1679" height="695" alt="image" src="https://github.com/user-attachments/assets/49b0d473-3a42-4580-9f9a-d588057f2e2e" />
 
