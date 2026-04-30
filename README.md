@@ -2,11 +2,6 @@
 
 **Beacon** is a cross-platform real-time chat application built with a strong focus on **security, performance, and intelligent interactions**. It combines modern full-stack technologies with **Post-Quantum Cryptography (PQC)** and an integrated **AI chatbot** to deliver a next-generation messaging experience.
 
----
-
-## Links
-
-* **GitHub:** [https://github.com/devangy/Beacon](https://github.com/devangy/Beacon)
 
 ---
 
