@@ -7,18 +7,19 @@ import {
     Platform,
     Dimensions,
     ScrollView,
-    SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import SvgComponent from "../components/SvgComponent";
 import { useEffect, useState, useRef } from "react";
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+import { useAuthRequest } from "expo-auth-session";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import { ApiResponse } from "@/types/api-response";
 import { useAppDispatch } from "../hooks/hooks";
 import { authUser } from "@/types/authUser";
 import { setAuthUser } from "@/slices/authSlice";
+import * as AuthSession from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -130,59 +131,53 @@ export default function Index() {
         }).start();
     };
 
+    const redirectUri = Platform.select({
+        web: process.env.EXPO_PUBLIC_REDIRECT_WEB!,
+        // Native (iOS/Android) uses scheme from app.json
+        default: AuthSession.makeRedirectUri({
+            scheme: "myapp",
+            path: "/",
+        }),
+    });
+
     const [request, response, promptAsync] = useAuthRequest(
         {
             clientId: "Iv23liH1VM9aPXjaTsUu",
             scopes: ["read:user", "user:email"],
-            redirectUri: Platform.select({
-                web: process.env.EXPO_PUBLIC_REDIRECT_WEB,
-                default: makeRedirectUri({
-                    scheme: "myapp",
-                    path: "home/chats",
-                }),
-            }),
-            usePKCE: true,
+            redirectUri: redirectUri,
+            usePKCE: false,
         },
         discovery,
     );
 
     useEffect(() => {
-        const handleOAuth = async () => {
-            console.log(response);
-            if (loading || response?.type !== "success") return;
-            if (response?.type === "success") {
-                setLoading(true);
-                const { code } = response.params;
+        console.log(response);
+        console.log(redirectUri);
 
-                try {
-                    const res = await axios<ApiResponse<authUser>>({
-                        method: "post",
-                        url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
-                        data: {
-                            code,
-                            code_verifier: request?.codeVerifier,
-                        },
-                    });
-
+        if (response?.type === "success") {
+            const { code } = response.params;
+            axios<ApiResponse<authUser>>({
+                method: "post",
+                url: `${process.env.EXPO_PUBLIC_BASE_URL}/api/auth/github`,
+                data: {
+                    code,
+                    code_verifier: request?.codeVerifier,
+                    redirect_uri: redirectUri,
+                },
+            })
+                .then((res) => {
                     const { accessToken, userId } = res.data.data;
-
-                    dispatch(
-                        setAuthUser({
-                            accessToken,
-                            userId,
-                        }),
-                    );
-
-                    router.push("/home/chats");
-                } catch (error: any) {
+                    dispatch(setAuthUser({ accessToken, userId }));
+                    setTimeout(() => {
+                        router.replace("/home/chats");
+                    }, 0);
+                })
+                .catch((error) => {
                     console.error("Authentication failed:", error);
                     setLoading(false);
-                }
-            }
-        };
-
-        handleOAuth();
-    }, [response, loading]);
+                });
+        }
+    }, [response]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "#0a0f1a" }}>
@@ -293,7 +288,7 @@ export default function Index() {
                                 onPress={() => promptAsync()}
                                 onPressIn={handlePressIn}
                                 onPressOut={handlePressOut}
-                                disabled={loading}
+                                disabled={!request}
                                 activeOpacity={0.8}
                                 style={{
                                     backgroundColor: "#1a1f2e",

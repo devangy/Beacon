@@ -13,7 +13,10 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SendHorizontal, ChevronLeft } from "lucide-react-native";
-
+import {
+    SafeAreaView,
+    useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { socket } from "../../socket";
 import axios, { AxiosResponse } from "axios";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
@@ -28,6 +31,7 @@ import api from "@/utils/axios-Intercept";
 import { Buffer } from "buffer";
 import { AsyncLocalStorage } from "async_hooks";
 import * as Crypto from "expo-crypto";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 // Conditionally import native module (only on mobile)
 let AesGcmCrypto: any = null;
@@ -58,6 +62,8 @@ const ChatScreen = () => {
     const messagesFromState = useAppSelector(
         (state) => state.message.messages.byId[chatId],
     );
+
+    const insets = useSafeAreaInsets();
 
     const encryptMessage = async (
         plaintext: string,
@@ -759,12 +765,11 @@ const ChatScreen = () => {
     };
 
     return (
-        <View className="flex-1" style={{ backgroundColor: "#0a0f1a" }}>
-            <Stack.Screen
-                options={{
-                    headerShown: false,
-                }}
-            />
+        <SafeAreaView
+            edges={["top"]}
+            style={{ flex: 1, backgroundColor: "#0a0f1a" }}
+        >
+            <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header */}
             <View
@@ -772,7 +777,7 @@ const ChatScreen = () => {
                     flexDirection: "row",
                     alignItems: "center",
                     paddingHorizontal: 12,
-                    paddingVertical: 14,
+                    paddingVertical: 10,
                     borderBottomWidth: 1,
                     borderBottomColor: "#1a1f2e",
                     backgroundColor: "#0a0f1a",
@@ -780,39 +785,21 @@ const ChatScreen = () => {
             >
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    style={{
-                        padding: 4,
-                        marginRight: 8,
-                    }}
+                    style={{ padding: 4, marginRight: 8 }}
                 >
                     <ChevronLeft color="#93FC00" size={24} />
                 </TouchableOpacity>
 
-                <View style={{ position: "relative" }}>
-                    <Image
-                        source={{ uri: otherMember?.avatarUrl }}
-                        style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 19,
-                            borderWidth: 1.5,
-                            borderColor: "#22c55e30",
-                        }}
-                    />
-                    <View
-                        style={{
-                            position: "absolute",
-                            bottom: 0,
-                            right: 0,
-                            width: 10,
-                            height: 10,
-                            borderRadius: 5,
-                            backgroundColor: "#22c55e",
-                            borderWidth: 2,
-                            borderColor: "#0a0f1a",
-                        }}
-                    />
-                </View>
+                <Image
+                    source={{ uri: otherMember?.avatarUrl }}
+                    style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 19,
+                        borderWidth: 1.5,
+                        borderColor: "#22c55e30",
+                    }}
+                />
 
                 <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text
@@ -825,13 +812,13 @@ const ChatScreen = () => {
                     >
                         {otherMember?.name}
                     </Text>
+
                     {isAI && (
                         <Text
                             style={{
                                 color: "#93FC00",
                                 fontSize: 11,
                                 fontFamily: "GeistMono",
-                                marginTop: 1,
                                 opacity: 0.7,
                             }}
                         >
@@ -843,70 +830,31 @@ const ChatScreen = () => {
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                className="flex-1"
-                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+                style={{ flex: 1 }}
             >
+                {/* Messages */}
                 <FlatList
                     data={messagesFromState}
-                    extraData={messagesFromState?.length}
                     keyExtractor={(item) => item.id}
                     renderItem={renderChatItem}
+                    showsVerticalScrollIndicator={false}
+                    ref={flatListRef}
                     contentContainerStyle={{
                         paddingHorizontal: 16,
                         paddingTop: 16,
-                        paddingBottom: 12,
+                        paddingBottom: 90, // 👈 space for input
                         flexGrow: 1,
-                        justifyContent: messagesFromState?.length
-                            ? undefined
-                            : "center",
                     }}
-                    showsVerticalScrollIndicator={false}
-                    ref={flatListRef}
-                    onContentSizeChange={() => {
-                        setTimeout(() => {
-                            flatListRef.current?.scrollToEnd({
-                                animated: true,
-                            });
-                        }, 100);
-                    }}
-                    onLayout={() => {
-                        setTimeout(() => {
-                            flatListRef.current?.scrollToEnd({
-                                animated: false,
-                            });
-                        }, 50);
-                    }}
-                    ListEmptyComponent={
-                        <View style={{ alignItems: "center", opacity: 0.4 }}>
-                            <Text
-                                style={{
-                                    color: "#94a3b8",
-                                    fontSize: 14,
-                                    fontFamily: "GeistMono",
-                                }}
-                            >
-                                No messages yet
-                            </Text>
-                            <Text
-                                style={{
-                                    color: "#64748b",
-                                    fontSize: 12,
-                                    fontFamily: "GeistMono",
-                                    marginTop: 4,
-                                }}
-                            >
-                                Say something to start the conversation
-                            </Text>
-                        </View>
+                    onContentSizeChange={() =>
+                        flatListRef.current?.scrollToEnd({ animated: true })
                     }
                 />
 
-                {/* Bot thinking indicator */}
+                {/* Bot thinking */}
                 {botThinking && (
                     <View
                         style={{
                             flexDirection: "row",
-                            alignItems: "center",
                             paddingHorizontal: 20,
                             paddingVertical: 10,
                         }}
@@ -916,10 +864,7 @@ const ChatScreen = () => {
                                 flexDirection: "row",
                                 alignItems: "center",
                                 backgroundColor: "#1a1a2e",
-                                borderWidth: 1,
-                                borderColor: "rgba(255, 255, 255, 0.06)",
                                 borderRadius: 16,
-                                borderBottomLeftRadius: 4,
                                 paddingHorizontal: 16,
                                 paddingVertical: 10,
                             }}
@@ -928,7 +873,6 @@ const ChatScreen = () => {
                             <Text
                                 style={{
                                     color: "#94a3b8",
-                                    fontSize: 13,
                                     marginLeft: 10,
                                     fontFamily: "GeistMono",
                                 }}
@@ -939,74 +883,61 @@ const ChatScreen = () => {
                     </View>
                 )}
 
-                {/* Message Input */}
+                {/* Input */}
                 <View
                     style={{
                         flexDirection: "row",
                         alignItems: "center",
                         paddingHorizontal: 12,
-                        paddingVertical: 10,
+                        paddingTop: 10,
+                        paddingBottom: 10 + insets.bottom, // 👈 SAFE AREA FIX
                         borderTopWidth: 1,
                         borderTopColor: "#1a1f2e",
                         backgroundColor: "#0a0f1a",
                     }}
                 >
-                    <View
+                    <TextInput
                         style={{
                             flex: 1,
-                            flexDirection: "row",
+                            backgroundColor: "#1a1f2e",
+                            color: "#e2e8f0",
+                            borderRadius: 22,
+                            paddingHorizontal: 18,
+                            paddingVertical: 10,
+                            borderWidth: 1,
+                            borderColor: "#2a2f3e",
+                            fontFamily: "GeistMono",
+                        }}
+                        placeholder="Message..."
+                        placeholderTextColor="#4a5568"
+                        value={messageInput}
+                        onChangeText={setMessageInput}
+                        onSubmitEditing={encryptSendMessage}
+                    />
+
+                    <TouchableOpacity
+                        onPress={encryptSendMessage}
+                        disabled={!messageInput.trim()}
+                        style={{
+                            marginLeft: 10,
+                            width: 42,
+                            height: 42,
+                            borderRadius: 21,
+                            backgroundColor: messageInput.trim()
+                                ? "#93FC00"
+                                : "#1a1f2e",
                             alignItems: "center",
+                            justifyContent: "center",
                         }}
                     >
-                        <TextInput
-                            style={{
-                                flex: 1,
-                                backgroundColor: "#1a1f2e",
-                                color: "#e2e8f0",
-                                borderRadius: 22,
-                                paddingHorizontal: 18,
-                                paddingVertical: 10,
-                                fontSize: 15,
-                                borderWidth: 1,
-                                borderColor: "#2a2f3e",
-                                fontFamily: "GeistMono",
-                            }}
-                            placeholder="Message..."
-                            placeholderTextColor="#4a5568"
-                            value={messageInput}
-                            onChangeText={setMessageInput}
-                            onSubmitEditing={() => encryptSendMessage()}
-                            ref={inputRef}
+                        <SendHorizontal
+                            color={messageInput.trim() ? "#0a0f1a" : "#4a5568"}
+                            size={20}
                         />
-                        <TouchableOpacity
-                            onPress={encryptSendMessage}
-                            disabled={messageInput.trim() === ""}
-                            style={{
-                                marginLeft: 10,
-                                width: 42,
-                                height: 42,
-                                borderRadius: 21,
-                                backgroundColor:
-                                    messageInput.trim() === ""
-                                        ? "#1a1f2e"
-                                        : "#93FC00",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <SendHorizontal
-                                color={
-                                    messageInput.trim() === ""
-                                        ? "#4a5568"
-                                        : "#0a0f1a"
-                                }
-                                size={20}
-                            />
-                        </TouchableOpacity>
-                    </View>
+                    </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
-        </View>
+        </SafeAreaView>
     );
 };
 
