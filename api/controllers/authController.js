@@ -9,7 +9,7 @@ console.log("Client ID:", process.env.GITHUB_CLIENT_ID);
 console.log("Client Secret:", process.env.GITHUB_CLIENT_SECRET);
 
 export async function handleLogin(req, res) {
-    const { code, code_verifier } = req.body;
+    const { code, code_verifier, redirect_uri } = req.body;
 
     console.log("Github code received", code);
 
@@ -29,7 +29,7 @@ export async function handleLogin(req, res) {
                 client_id: process.env.GITHUB_CLIENT_ID,
                 client_secret: process.env.GITHUB_CLIENT_SECRET,
                 ...(code_verifier && { code_verifier }),
-                redirect_uri: process.env.FRONTEND_REDIRECT_URL,
+                redirect_uri,
             },
             {
                 headers: {
